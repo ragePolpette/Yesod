@@ -1,0 +1,28 @@
+{
+  "_comment": "Single source of truth for the tool gate. Both harness gates read this file. Unknown tools are blocked (fail closed).",
+  "phase": "passive",
+  "tools": {
+    "run_summaries_list": "read",
+    "proposals_history": "read",
+    "events_get": "read",
+    "notify_propose": "notify",
+    "browser_navigate": "read",
+    "browser_read": "read",
+    "browser_submit_form": "irreversible"
+  },
+  "policy": {
+    "passive": {
+      "read": "allow",
+      "notify": "allow",
+      "reversible": "block",
+      "irreversible": "block"
+    },
+    "test_env": {
+      "read": "allow",
+      "notify": "allow",
+      "reversible": "allow",
+      "irreversible": "allow_if_test_target"
+    }
+  },
+  "test_targets": ["http://localhost", "http://127.0.0.1", "https://staging.jobbby.local"]
+}

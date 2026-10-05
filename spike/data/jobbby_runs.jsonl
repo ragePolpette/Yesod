@@ -1,0 +1,20 @@
+{"run_id": "run:jobbby:0001", "project": "jobbby", "ts": "2026-09-28T19:00:00Z", "exit_code": 0, "status_line": "OK applied 3/3"}
+{"run_id": "run:jobbby:0002", "project": "jobbby", "ts": "2026-09-29T07:00:00Z", "exit_code": 0, "status_line": "OK applied 2/2"}
+{"run_id": "run:jobbby:0003", "project": "jobbby", "ts": "2026-09-29T19:00:00Z", "exit_code": 0, "status_line": "OK applied 3/3"}
+{"run_id": "run:jobbby:0004", "project": "jobbby", "ts": "2026-09-30T07:00:00Z", "exit_code": 0, "status_line": "OK applied 2/2"}
+{"run_id": "run:jobbby:0005", "project": "jobbby", "ts": "2026-09-30T19:00:00Z", "exit_code": 1, "status_line": "FAILED search: jobs API timeout after 30s"}
+{"run_id": "run:jobbby:0006", "project": "jobbby", "ts": "2026-10-01T07:00:00Z", "exit_code": 0, "status_line": "OK applied 2/2"}
+{"run_id": "run:jobbby:0007", "project": "jobbby", "ts": "2026-10-01T19:00:00Z", "exit_code": 0, "status_line": "OK applied 3/3"}
+{"run_id": "run:jobbby:0008", "project": "jobbby", "ts": "2026-10-02T07:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/5: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0009", "project": "jobbby", "ts": "2026-10-02T19:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/3: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0010", "project": "jobbby", "ts": "2026-10-03T07:00:00Z", "exit_code": 0, "status_line": "OK applied 2/2"}
+{"run_id": "run:jobbby:0011", "project": "jobbby", "ts": "2026-10-03T19:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/5: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0012", "project": "jobbby", "ts": "2026-10-04T07:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/3: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0013", "project": "jobbby", "ts": "2026-10-04T19:00:00Z", "exit_code": 0, "status_line": "OK applied 3/3"}
+{"run_id": "run:jobbby:0014", "project": "jobbby", "ts": "2026-10-05T07:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/5: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0015", "project": "jobbby", "ts": "2026-10-05T19:00:00Z", "exit_code": 1, "status_line": "FAILED search: jobs API timeout after 30s"}
+{"run_id": "run:jobbby:0016", "project": "jobbby", "ts": "2026-10-06T07:00:00Z", "exit_code": 0, "status_line": "OK applied 2/2"}
+{"run_id": "run:jobbby:0017", "project": "jobbby", "ts": "2026-10-06T19:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/5: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0018", "project": "jobbby", "ts": "2026-10-07T07:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/3: apply: submit button not found in static HTML (form rendered by JavaScript)"}
+{"run_id": "run:jobbby:0019", "project": "jobbby", "ts": "2026-10-07T19:00:00Z", "exit_code": 0, "status_line": "OK applied 3/3"}
+{"run_id": "run:jobbby:0020", "project": "jobbby", "ts": "2026-10-08T07:00:00Z", "exit_code": 1, "status_line": "FAILED apply 0/5: apply: submit button not found in static HTML (form rendered by JavaScript)"}

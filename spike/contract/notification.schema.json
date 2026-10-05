@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yesod/spike/notification.schema.json",
+  "title": "Notification (the only output allowed in phase 1)",
+  "type": "object",
+  "required": ["kind", "title", "observation", "dedupe_key"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "enum": ["observation", "proposal"] },
+    "project": { "type": ["string", "null"] },
+    "title": { "type": "string", "maxLength": 120 },
+    "observation": {
+      "type": "object",
+      "required": ["summary", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "maxLength": 600 },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["ref", "data"],
+            "additionalProperties": false,
+            "properties": {
+              "ref": { "type": "string", "description": "event id or run id, e.g. run:jobbby:2026-09-30T08:00" },
+              "data": { "type": "string", "maxLength": 300 }
+            }
+          }
+        },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "considered": { "type": "integer", "minimum": 0 },
+            "matching": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "diagnosis": {
+      "type": "object",
+      "required": ["hypothesis", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "hypothesis": { "type": "string", "maxLength": 600 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "alternatives": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "required": ["change", "execution_class"],
+      "additionalProperties": false,
+      "properties": {
+        "change": { "type": "string", "maxLength": 800 },
+        "how_to_verify": { "type": "string", "maxLength": 400 },
+        "execution_class": { "enum": ["observe_only", "test_env", "needs_confirmation"] }
+      }
+    },
+    "cost_risk": {
+      "type": "object",
+      "required": ["effort", "risk"],
+      "additionalProperties": false,
+      "properties": {
+        "effort": { "enum": ["S", "M", "L"] },
+        "risk": { "enum": ["low", "medium", "high"] },
+        "notes": { "type": "string", "maxLength": 400 }
+      }
+    },
+    "dedupe_key": { "type": "string", "pattern": "^[a-z0-9:_-]{3,80}$" },
+    "supersedes": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "proposal" } } },
+      "then": { "required": ["diagnosis", "proposal", "cost_risk"] }
+    }
+  ]
+}

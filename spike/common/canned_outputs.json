@@ -1,0 +1,58 @@
+{
+  "_comment": "What the mock model 'decides'. Hand-written to be valid against contract/notification.schema.json and consistent with data/. A real model must produce something equivalent; see spike-plan for the quality rubric.",
+  "reflection_notification": {
+    "kind": "observation",
+    "project": "llm-memory",
+    "title": "Decisione sull'embedding ribaltata in 2 ore, con impatto su llm-context",
+    "observation": {
+      "summary": "La decisione evt-016 (tenere hash-local) è stata invalidata un'ora dopo (evt-017) e sostituita da evt-018 (passare a nomic-embed-code). evt-019 introduce un'assunzione cross-progetto: modello di embedding condiviso con llm-context.",
+      "evidence": [
+        {"ref": "evt-016", "data": "decision: keep hash-local"},
+        {"ref": "evt-017", "data": "invalidated evt-016: poor recall on code queries"},
+        {"ref": "evt-018", "data": "decision: switch to nomic-embed-code"},
+        {"ref": "evt-019", "data": "assumption: shared embedding model across llm-memory and llm-context"}
+      ],
+      "window": {"considered": 26, "matching": 4}
+    },
+    "diagnosis": {
+      "hypothesis": "Il cambio di provider richiede un re-embed completo (memory.reembed) e l'assunzione evt-019 lega il ciclo di rilascio dei due progetti; nessuna delle due conseguenze è registrata.",
+      "confidence": 0.6,
+      "alternatives": ["Il re-embed è già pianificato ma non scritto in memoria"]
+    },
+    "dedupe_key": "llm-memory:embedding:provider-switch",
+    "supersedes": null
+  },
+  "jobbby_proposal": {
+    "kind": "proposal",
+    "project": "jobbby",
+    "title": "Le candidature su ATS con form JavaScript falliscono sempre: serve automazione browser",
+    "observation": {
+      "summary": "Dalla run 0008 in poi, 8 run su 13 falliscono nello step apply con la stessa firma (apply:static_form_missing), sempre su careers.ats-js.example. Le run sui siti statici continuano a riuscire. I 2 timeout di ricerca sono rumore già valutato (prop-001 rifiutata).",
+      "evidence": [
+        {"ref": "run:jobbby:0008", "data": "exit=1; apply 0/5; submit button not found in static HTML"},
+        {"ref": "run:jobbby:0011", "data": "exit=1; apply 0/5; same signature"},
+        {"ref": "run:jobbby:0014", "data": "exit=1; apply 0/5; same signature"},
+        {"ref": "run:jobbby:0020", "data": "exit=1; apply 0/5; same signature, host careers.ats-js.example"},
+        {"ref": "run:jobbby:0010", "data": "exit=0; applied 2/2 on jobs.static.example (controllo)"}
+      ],
+      "window": {"considered": 20, "matching": 8}
+    },
+    "diagnosis": {
+      "hypothesis": "Lo step apply invia il form leggendo l'HTML statico; sull'ATS il form viene renderizzato lato client, quindi il pulsante di submit non esiste nell'HTML scaricato.",
+      "confidence": 0.8,
+      "alternatives": ["Protezione anti-bot che serve una pagina diversa ai client senza JavaScript"]
+    },
+    "proposal": {
+      "change": "Aggiungere un adapter di automazione browser (Playwright, headless) usato solo per gli host che falliscono con apply:static_form_missing. Navigazione e lettura libere; il submit passa dal gate: consentito solo verso l'ATS di test, altrimenti richiede conferma.",
+      "how_to_verify": "Replay delle 8 run fallite contro un mock dell'ATS in locale: la proposta è valida se il form viene trovato e compilato in almeno 7 su 8, con zero submit verso host reali.",
+      "execution_class": "test_env"
+    },
+    "cost_risk": {
+      "effort": "M",
+      "risk": "medium",
+      "notes": "Il rischio principale è un invio reale accidentale: va mitigato con un gate a livello di rete (blocco delle POST verso host non di test), non solo a livello di tool."
+    },
+    "dedupe_key": "jobbby:apply:static_form_missing",
+    "supersedes": null
+  }
+}

@@ -1,0 +1,2 @@
+{"id": "prop-001", "project": "jobbby", "ts": "2026-10-02T07:00:00Z", "dedupe_key": "jobbby:search:api_timeout", "title": "Aumentare il timeout della ricerca annunci a 120s", "verdict": "rejected", "verdict_reason": "Due timeout in 20 run non giustificano la modifica: rumore."}
+{"id": "prop-002", "project": "llm-memory", "ts": "2026-09-30T07:00:00Z", "dedupe_key": "llm-memory:dedup:burst", "title": "Abilitare il dedup semantico sulle scritture ripetute", "verdict": "accepted", "verdict_reason": ""}

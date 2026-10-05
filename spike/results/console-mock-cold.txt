@@ -1,0 +1,36 @@
+pi     reflection rep=0 ok=True  exit=0   0.48s final='DONE'
+pi     noise      rep=0 ok=True  exit=0    0.6s final='NOTHING'
+pi     jobbby     rep=0 ok=True  exit=0   0.57s final='DONE'
+pi     gate       rep=0 ok=True  exit=0   0.54s final='GATE_BLOCKED'
+hermes reflection rep=0 ok=True  exit=0   4.26s final='DONE'
+hermes noise      rep=0 ok=True  exit=0    3.8s final='NOTHING'
+hermes jobbby     rep=0 ok=True  exit=0   4.27s final='DONE'
+hermes gate       rep=0 ok=True  exit=0   3.92s final='GATE_BLOCKED'
+pi     reflection rep=1 ok=True  exit=0   0.54s final='DONE'
+pi     noise      rep=1 ok=True  exit=0   0.62s final='NOTHING'
+pi     jobbby     rep=1 ok=True  exit=0    0.6s final='DONE'
+pi     gate       rep=1 ok=True  exit=0   0.52s final='GATE_BLOCKED'
+hermes reflection rep=1 ok=True  exit=0   3.98s final='DONE'
+hermes noise      rep=1 ok=True  exit=0   4.52s final='NOTHING'
+hermes jobbby     rep=1 ok=True  exit=0    4.3s final='DONE'
+hermes gate       rep=1 ok=True  exit=0   4.05s final='GATE_BLOCKED'
+pi     reflection rep=2 ok=True  exit=0   0.53s final='DONE'
+pi     noise      rep=2 ok=True  exit=0    0.6s final='NOTHING'
+pi     jobbby     rep=2 ok=True  exit=0   0.57s final='DONE'
+pi     gate       rep=2 ok=True  exit=0   0.52s final='GATE_BLOCKED'
+hermes reflection rep=2 ok=True  exit=0   4.04s final='DONE'
+hermes noise      rep=2 ok=True  exit=0   3.87s final='NOTHING'
+hermes jobbby     rep=2 ok=True  exit=0   4.11s final='DONE'
+hermes gate       rep=2 ok=True  exit=0   3.98s final='GATE_BLOCKED'
+| harness | scenario | ok | exit≠0 | median s | max s | LLM req/run | est. prompt tok/run | 1st req: system chars / tools / tool-schema chars |
+|---|---|---|---|---|---|---|---|---|
+| hermes | gate | 3/3 | 0 | 3.98 | 4.05 | 2.0 | 6073 | 7868 / 5 / 3425 |
+| hermes | jobbby | 3/3 | 0 | 4.27 | 4.30 | 4.0 | 23227 | 7874 / 5 / 3425 |
+| hermes | noise | 3/3 | 0 | 3.87 | 4.52 | 1.0 | 4087 | 7871 / 5 / 3425 |
+| hermes | reflection | 3/3 | 0 | 4.04 | 4.26 | 2.0 | 7234 | 7886 / 5 / 3425 |
+| pi | gate | 3/3 | 0 | 0.52 | 0.54 | 2.0 | 2994 | 1958 / 5 / 3359 |
+| pi | jobbby | 3/3 | 0 | 0.57 | 0.60 | 4.0 | 14963 | 1960 / 5 / 3359 |
+| pi | noise | 3/3 | 0 | 0.60 | 0.62 | 1.0 | 2594 | 1959 / 5 / 3359 |
+| pi | reflection | 3/3 | 0 | 0.53 | 0.54 | 2.0 | 4145 | 1964 / 5 / 3359 |
+
+Glue lines (non-blank, non-comment): pi=62, hermes=61, shared (both)=141
