@@ -8,7 +8,11 @@
     "notify_propose": "notify",
     "browser_navigate": "read",
     "browser_read": "read",
-    "browser_submit_form": "irreversible"
+    "browser_submit_form": "irreversible",
+    "browser_snapshot": "read",
+    "browser_click": "read",
+    "browser_press": "read",
+    "browser_fill_draft": "reversible"
   },
   "policy": {
     "passive": {
@@ -24,5 +28,10 @@
       "irreversible": "allow_if_test_target"
     }
   },
-  "test_targets": ["http://localhost", "http://127.0.0.1", "https://staging.jobbby.local"]
+  "test_targets": [
+    "http://localhost",
+    "http://127.0.0.1",
+    "https://staging.jobbby.local"
+  ],
+  "_comment_browser": "browser_click/press are 'read' on purpose: a click is not a submit for the tool gate. Submits are stopped by the network gate in browser/gated_browser.py."
 }

@@ -1,201 +1,231 @@
-# ADR-001 — Harness per il loop agentico del Livello 1
+# ADR-001 — Loop agentico del Livello 1
 
-- **Stato**: proposta, da confermare dopo lo spike con modello reale (vedi `spike-plan.md`)
-- **Data**: 2026-10-05
-- **Ambito**: Livello 1 dell'agente ad attenzione continua (riflessione e revisione dei progetti seguiti), in fase 1 passiva. In prospettiva anche i punti LLM di Yesod.
-- **Evidenze**: `docs/research.md` (fonti), `spike/` (codice e risultati misurati)
+- **Stato**: rivista il 2026-10-07 dopo le tue tre obiezioni. La versione del 2026-10-05 proponeva Pi; **questa propone l'opzione C** (`Microsoft.Extensions.AI` più SDK MCP C# nel servizio .NET). Resta da confermare con lo spike su modello reale (`spike-plan.md` §5, `spike/run_real.sh`).
+- **Ambito**: Livello 1 dell'agente ad attenzione continua (riflessione e revisione dei progetti seguiti), fase 1 passiva. In prospettiva anche i punti LLM di Yesod.
+- **Evidenze**: `docs/research.md` (fonti), `spike/` (codice), `spike/results/` (misure). Legenda: [M] misurato, [V] verificato su fonte primaria, [I] inferenza mia, [NV] non verificabile da qui.
 
 ---
 
 ## 1. Decisione
 
-1. **Pi** (`@earendil-works/pi-coding-agent`, versione pinnata esatta, oggi 1.0.3) fornisce il loop del Livello 1.
-   - Il servizio .NET lo invoca come **processo**: `pi --mode json --no-session --no-builtin-tools …`, con stdin chiuso.
-   - Passerà a `--mode rpc` solo quando servirà lo steering a metà run.
-   - L'invocazione sta dietro una porta tua (`IReflectionRunner`), così l'harness si sostituisce senza toccare il resto.
-2. **I tool non vivono nell'harness.** Stanno in un **server MCP di adapter tuo** (anti-corruption layer): pochi tool compatti, annotati per rischio, che dentro parlano con llm-memory e llm-context. Pi lo monta con `exposure: "direct"`.
-   - Nello spike lo stesso server gira identico anche in Hermes: cambiare harness costa circa 60 righe di colla.
-3. **Il gate è unico e dichiarativo** (`risk.json`: read / notify / reversible / irreversible). L'estensione `tool_call` di Pi lo applica, in modo fail closed.
-   - Per il browser c'è in più un **gate a livello di rete**, dentro l'adapter browser; vedi §6.
-4. **Hermes Agent non viene adottato** né come loop del Livello 1 né come base di Yesod.
-5. **Terza opzione, con perimetro ristretto**: i *punti decisionali LLM di Yesod* (routing, classificazione, "notifico o no") **non usano un harness**. Sono singole chiamate con output strutturato da .NET (`Microsoft.Extensions.AI`, `IChatClient` più JSON schema), e il tool-calling della libreria (`UseFunctionInvocation`) solo dove serve un tool.
-   - Non è "riscrivere un loop agentico": il loop lo dà la libreria e lo usi solo per interazioni brevi e chiuse.
-   - È anche il **piano di uscita** del Livello 1 se Pi delude (§7).
+1. **Il Livello 1 gira dentro il servizio .NET**, senza harness:
+   - `IChatClient` di `Microsoft.Extensions.AI` 10.10, con `UseFunctionInvocation()` come loop di tool calling e un tetto di iterazioni;
+   - `ModelContextProtocol.Core` 2.2 come client dello **stesso server MCP di adapter** che usavano Pi e Hermes;
+   - il gate per tool è un `DelegatingAIFunction` che legge `contract/risk.json` ed è fail closed.
+
+   L'implementazione dello spike è `spike/dotnet/Program.cs`. Nel servizio il client MCP resta aperto per tutta la vita del processo.
+2. **Gli adapter restano il centro del design**: server MCP tuo, con pochi tool compatti e annotati per rischio. È anche la garanzia di reversibilità della decisione: Pi e Hermes montano lo stesso server senza modifiche, l'ho verificato in tutte e tre le celle.
+3. **Il browser ha un gate di rete** dentro l'adapter (`spike/browser/gated_browser.py`), testato contro click, Enter, `fetch` e `sendBeacon` (§5). Il gate per tool resta come seconda linea.
+4. **Pi non è più il candidato per il Livello 1**, ma resta candidato **worker**: è il sotto-agente in sola lettura che legge il repo di un progetto (`pi --tools read,grep,find,ls`, in un container `:ro`). In quel ruolo i suoi tool integrati servono davvero. L'alternativa nello stesso ruolo è Claude Code.
+5. **Hermes resta scartato**, per le ragioni della versione precedente (§6).
+6. **Condizione di conferma**: lo spike su modello reale non deve mostrare che C è peggiore in modo sistematico sulla qualità (soglie in §7).
 
 ---
 
-## 2. Premesse che ritengo sbagliate o da rivedere
+## 2. Le tue obiezioni
 
-Le metto prima della decisione perché alcune cambiano il design più della scelta dell'harness.
+### O1 — "Overhead e token contano poco per un agente passivo; il criterio decisivo è la qualità con un modello economico"
 
-**P1 — "Postgres LISTEN/NOTIFY sulle scritture di memoria": llm-memory non è su Postgres.**
-- Il backend è **SQLite** in WAL, sia per i metadati sia per i vettori (`MEMORY_STORAGE_BACKEND=sqlite`, `MEMORY_VECTOR_BACKEND=sqlite`, `PRAGMA journal_mode=WAL`; `src/storage/sqlite_store.py`). Su Postgres/pgvector c'è solo llm-context.
-- SQLite non ha un meccanismo di notifica cross-process: `sqlite3_update_hook` vale solo nella connessione che scrive.
-- Ci sono due alternative concrete:
-  - (a) **Tail di `audit_log` per cursore**: la tabella ha `id INTEGER PRIMARY KEY AUTOINCREMENT`, quindi basta `SELECT … WHERE id > :last` ogni 2–5 s. In WAL il lettore non blocca chi scrive. Costa praticamente zero.
-  - (b) Un hook di emissione nel write path di `MemoryService`, verso una coda locale o un webhook. È più pulito, ma tocca llm-memory.
-- Raccomando (a) per la fase 1. Il principio che conta è **"nessun LLM nel loop di percezione"**, non "zero polling": un cursore su un DB locale non è il polling che volevi evitare.
+**Sulla parte di costo hai ragione.** Con poche riflessioni al giorno, 3 s di avvio o 8k token in più sono irrilevanti. Ho tolto latenza e token dai criteri decisivi.
 
-**P2 — Il Livello 0 deve riusare lo scoring che llm-memory già calcola.** `importance_scoring.py` produce `surprise`, `negative_impact`, frequenza e recurrence, e `noise_penalty`. Ricalcolarli nel watcher crea due definizioni di "importante" che divergeranno.
+**Su due punti però non sono d'accordo:**
 
-**P3 — "Il Livello 0 usa solo exit code e riga di stato" presuppone che qualcuno veda la run.**
-- Se Jobbby parte dal suo scheduler, l'agente non vede nessun exit code.
-- Senza strumentare il progetto servono una di queste due cose:
-  - (a) le run partono da un **launcher tuo** (`yesod run jobbby -- <cmd>`, che cattura exit code e coda dello stdout);
-  - (b) il sotto-agente scopre *dove* lo scheduler esistente registra l'esito (Task Scheduler "Last Run Result", exit code del container Docker, file di log) e il Livello 0 legge da lì.
-- È una decisione da prendere adesso, non un dettaglio: (a) è più affidabile, ma sposta l'esecuzione sotto il tuo controllo, quindi conta come "usare" e non solo "osservare".
+- **La stabilità d'invocazione non è una metrica di costo, è correttezza.** Per un agente passivo il guasto peggiore non è la riflessione lenta, ma quella che non avviene o che avviene senza tool, **senza che nessuno se ne accorga**. Hermes l'ha fatto due volte nello spike: con exit 0 e zero tool quando manca l'extra `[mcp]`, e con i tool nascosti da `tool_search` di default [M]. Pi l'ha fatto una volta: con il glob `--tools 'mcp__…*'` dichiara zero tool, in silenzio [M]. Questo criterio resta decisivo, e lo misuro: il mock registra quali tool vengono *dichiarati* al modello.
+- **La qualità dipende soprattutto da modello e prompt, poco dal loop.** In tutte e tre le celle prompt utente, tool e schema sono identici. Il contributo dell'harness alla qualità si riduce a due cose:
+  - (a) il suo system prompt: circa 2 KB in Pi, circa 8 KB in Hermes, nessuno in C [M];
+  - (b) come gestisce le tool call malformate e i retry.
 
-**P4 — "Riassunto per run nella memoria" significa una chiamata LLM per run, e contraddice "LLM solo sopra soglia".** Il riassunto va reso **lazy**:
-- deterministico per tutte le run (exit code, riga di stato, firma normalizzata);
-- LLM solo per le run fallite o anomale.
+  Su (a), con C il prompt lo controlli al 100%: se il prompt di Hermes aiuta un modello economico, lo si può riprodurre, mentre l'inverso (togliere a Hermes il suo) non si può fare. Su (b) le differenze sono reali e vanno misurate col modello vero: è il motivo per cui lo spike real resta la condizione di conferma.
 
-Il revisore lento lavora su riassunti strutturati, non su log grezzi.
+  Quindi lo spike real deciderà **modello e prompt** più che il loop, salvo che un loop gestisca male le tool call di quel provider. [I, motivato]
 
-**P5 — Il gating del browser "submit solo con conferma" non si può fare a livello di tool.**
-- Un submit è un click, un `Enter` o una `fetch` da JavaScript. Il `browser_exec` di Hermes fa eseguire Python arbitrario al modello dentro il browser.
-- Il gate deve stare **nella rete del browser**, sotto il controllo dell'adapter (§6). Questo vale con qualsiasi harness.
+### O2 — "Il test del gate è tautologico"
 
-**P6 — Yesod v0 non ha bisogno di un harness, e nemmeno di Hermes.**
-- "Solo canale di notifica" sono circa 50 righe .NET verso Telegram o un topic ntfy.
-- È la parte più deterministica del sistema: legarla a un harness LLM è un costo senza beneficio.
-- Se vuoi la copertura multi-piattaforma di Hermes, `hermes send` funziona come binario indipendente: niente LLM, niente gateway, exit code puliti.
+**Hai ragione, senza riserve.** Il mock chiamava un tool già marcato `irreversible`: il test dimostrava solo che una tabella veniva letta.
 
-**P7 — Hermes non è più un "harness": è una piattaforma che vuole essere Yesod.**
-- Oggi Hermes include gateway su oltre 30 piattaforme, cron, heartbeat, kanban multi-agente, delegazione, memoria con learning loop e skill auto-generate.
-- Usarlo come semplice fornitore di loop significa **spegnerne i default uno per uno**. Nello spike ne ho dovuti spegnere 4: memoria, `tool_search`, generazione titoli, consenso degli hook.
-- Ogni default spento è un punto in cui un aggiornamento settimanale da circa 460 PR può riaccendere qualcosa.
-- Se invece lo usassi *anche* come Yesod, ti ritroveresti un orchestratore LLM-centrico, cioè quello che hai detto di non volere.
+Ora i tool del browser (`browser_click` e `browser_press`) sono classificati **read**, quindi il gate per tool li lascia passare, ed è proprio il punto. Il blocco avviene nella rete del browser. Il test unitario (`spike/browser/test_network_gate.py`, 6 test, tutti verdi [M]) verifica che:
+- verso un host terzo (127.0.0.2, fuori da `test_targets`) **click sul submit, Enter in un campo, `fetch` da JS della pagina e `sendBeacon` sono tutti bloccati**: zero scritture ricevute dal server;
+- **controllo positivo**: gli stessi quattro vettori arrivano a un host di test (127.0.0.1). Senza questo controllo, una pagina rotta avrebbe fatto passare il test a vuoto;
+- il **`confirm_token`** (HMAC con scadenza, monouso, legato a metodo e URL) lascia passare esattamente un'azione: non è riusabile, non vale per un altro URL, non è falsificabile;
+- un **WebSocket** verso il terzo non si connette, perché `route()` non lo vede e va gestito a parte;
+- **limite noto, testato e documentato**: una GET con side effect (form `method=GET`) passa. Il gate di rete distingue scrittura e lettura solo dal metodo.
 
-**P8 — Ordine delle fasi: partirei dal percorso lento (progetti seguiti), non dalla riflessione sulle scritture di memoria.**
-- Il percorso lento ha un obiettivo esplicito (la riga per progetto), un segnale oggettivo (exit code) e un esito verificabile (proposta accettata o rifiutata).
-- La riflessione sulle scritture di memoria è quella col rischio più alto di produrre notifiche "interessanti ma inutili", e non hai ancora un modo di misurarlo.
-- Proposta: fase 1a con percorso lento più heartbeat giornaliero, e calibrazione delle soglie sui verdetti. Fase 1b con il percorso veloce, solo dopo aver visto il tasso di proposte rifiutate. [I]
+In più, lo **scenario end-to-end `browser_gate`** fa girare la stessa cosa attraverso i tre loop: il modello finto naviga e prova i quattro vettori con soli tool read. Il risultato è in §4.
 
----
+Un dettaglio di implementazione: `context.route` (non `page.route`) copre popup e iframe; `service_workers="block"` serve perché le richieste dei service worker scavalcano `route()`.
 
-## 3. Opzioni considerate
+Durante questo lavoro ho trovato un **bug mio** nella policy: `test_targets` veniva confrontato con `startswith`, quindi `http://localhost.evil.example` valeva come `http://localhost`. Ora il confronto è per origin (schema, host, porta) in tutte le implementazioni del gate.
 
-| | A. Pi | B. Hermes Agent | C. `Microsoft.Extensions.AI` in .NET (senza harness) |
-|---|---|---|---|
-| Cos'è | Harness minimale ed estensibile, TS/Node | Piattaforma agente completa, Python 3.14 | Astrazione `IChatClient` più function invocation, dentro il servizio .NET |
-| Integrazione .NET | Processo, JSONL (`--mode json` / `--mode rpc`) | Processo (`-z`) oppure HTTP (gateway: Runs API con `approval`/`steer`) | Nativa, in-process |
-| MCP | Nativo, ma **da 6 giorni** (0.99.0) | Nativo, maturo | SDK MCP C# ufficiale (client) [NV qui] |
-| Overhead per invocazione [M] | ~0,5 s; system prompt ~2 KB, sostituibile per intero | ~3,6 s; system prompt ~7,9 KB (solo lo slot identità è sostituibile) | ~0 [I] |
-| Memoria propria | Nessuna | Sì (`MEMORY.md`/`USER.md` più skill auto-generate), disattivabile | Nessuna |
-| Gating | Hook `tool_call`; nessun permesso integrato, si isola col container | Approvazioni, hook `pre_tool_call`, MCP `untrusted` | Tuo, nel wrapper dei tool |
-| Sotto-agenti / browser | No / No (si fa via MCP o estensione) | Sì / Sì (molto ricco) | No / No |
-| Steering a metà run | Sì (RPC `steer`/`follow_up`) | Sì (TUI, Runs API) | Non pertinente (run brevi) |
-| Stabilità | 1.0 da 4 giorni; 8 release con breaking change in 3 mesi, **documentate** | ~550 commit/giorno, release settimanali, note rimandate, semantica CLI cambiata in 0.21 | GA, semver Microsoft [I] |
-| Maintainer | Nucleo piccolo (Zechner, Ronacher e pochi altri), ora sotto `earendil-works` | Molti autori, molto lavoro di agenti | Microsoft |
+### O3 — "Pi usato con `--no-builtin-tools --no-session` è solo un loop di tool calling: è ciò che dà `Microsoft.Extensions.AI`"
 
-Non ho valutato in profondità Claude Code headless o il Claude Agent SDK come terza opzione. Sono ottimi *worker*, ma legano il Livello 1 a un solo provider, mentre tu vuoi modelli economici per le riflessioni.
+**Hai ragione, e i dati lo confermano.** L'opzione C è ora una cella dello spike con gli stessi scenari, server MCP, gate e metriche. È stabile quanto Pi, senza harness prompt, e senza Node né MCP di 8 giorni nel percorso critico [M]. Per questo cambio la decisione.
+
+**Cosa Pi dava "gratis" e con C va aggiunto esplicitamente** (non è molto, ma non è zero):
+- **retry e backoff** su 429 e 5xx: la pipeline di `HttpClient` con `AddStandardResilienceHandler` o simile;
+- **tetto d'iterazioni**: `MaximumIterationsPerRequest`, già impostato a 10;
+- **timeout** per riflessione;
+- **normalizzazione dei provider**: con un endpoint compatibile OpenAI (OpenRouter, Ollama, vLLM) `Microsoft.Extensions.AI.OpenAI` basta. Per Anthropic o Gemini nativi (caching, thinking) servono le rispettive implementazioni di `IChatClient` [NV qui].
+
+**Cosa non cambia**: Node non sparisce dal sistema se il worker read-only resta Pi o Claude Code. Sparisce dal *percorso critico* del Livello 1.
 
 ---
 
-## 4. Evidenze dallo spike (modello finto, 10 ripetizioni warm per cella)
+## 3. Premesse (versione precedente, §2) — stato
 
-Sotto c'è `spike/results/summary-mock.md`. Il task e i tool adapter (MCP) sono identici per i due harness; la latenza **esclude il modello**, perché il mock risponde in pochi millisecondi.
-
-| harness | scenario | ok | median s | max s | LLM req/run | token prompt stimati/run | 1ª richiesta: system / n. tool / schema tool (car.) |
-|---|---|---|---|---|---|---|---|
-| pi | reflection | 10/10 | **0,51** | 0,65 | 2 | **4.145** | 1.964 / 5 / 3.359 |
-| hermes | reflection | 10/10 | 3,61 | 3,85 | 2 | 7.226 | 7.870 / 5 / 3.425 |
-| pi | noise (controllo negativo) | 10/10 | **0,49** | 0,52 | 1 | **2.594** | silenzio corretto |
-| hermes | noise (controllo negativo) | 10/10 | 3,49 | 3,62 | 1 | 4.086 | silenzio corretto |
-| pi | jobbby | 10/10 | **0,59** | 0,60 | 4 | **14.963** | 1.960 / 5 / 3.359 |
-| hermes | jobbby | 10/10 | 3,81 | 4,01 | 4 | 23.219 | 7.866 / 5 / 3.425 |
-| pi | gate | 10/10 | 0,51 | 0,60 | 2 | 2.994 | submit **bloccato 10/10** |
-| hermes | gate | 10/10 | 3,52 | 3,80 | 2 | 6.072 | submit **bloccato 10/10** |
-
-Le run "cold" (home dell'harness nuova a ogni invocazione, 3 ripetizioni) sono in `spike/results/summary-mock-cold.md`: Pi 0,52–0,60 s, Hermes 3,9–4,3 s di mediana.
-
-- **Colla scritta** (righe non vuote e non di commento, escluse le parti condivise): Pi 62 (adapter.py più gate.ts), Hermes 61 (adapter.py più gate.py). Le parti condivise (server MCP e policy) sono 141 righe. **Sulla colla è un pareggio.**
-- **Trappole di configurazione incontrate** (il costo vero, che le righe non mostrano):
-  - **Pi, 3**: stdin aperto che blocca il processo; `exposure` di default `codemode` che nasconde i tool; glob `--tools 'mcp__…*'` che non dichiara nulla.
-  - **Hermes, 7**: Python 3.14 rc incompatibile; extra `[mcp]` mancante con **fallimento silenzioso** (exit 0, zero tool); `tool_search` che nasconde i tool MCP; nome del toolset (`spike` e non `mcp-spike`); `--usage-file` solo top-level; chiamata LLM ausiliaria per il titolo; consenso degli hook in headless.
-- **Contesto**: Hermes con il toolset di default dichiara 23 tool e manda circa 47,7 KB per richiesta (circa 12k token) prima ancora del prompt. Con il toolset ristretto resta a 1,55–1,75 volte Pi.
-- **Stabilità**: 80 invocazioni warm su 80 e 24 cold su 24 riuscite in totale tra i due harness; nessuna violazione del gate.
-- **Non misurato**: qualità dell'output, comportamento con un modello reale, Windows.
-
----
-
-## 5. Trade-off accettati scegliendo Pi
-
-- **Nessun permesso integrato.** La sicurezza viene dall'isolamento: Pi gira in un container con il repo montato in sola lettura e senza credenziali, più l'hook `tool_call` e il gate di rete. È più lavoro iniziale, ma è anche più onesto di un sistema di approvazioni dentro lo stesso processo che il modello può influenzare.
-- **Niente sotto-agenti né browser integrati.** Per il Livello 1 passivo non servono. Per Jobbby il sotto-agente in sola lettura è *un altro processo Pi* (`--tools read,grep,find,ls`) o Claude Code, cioè il tuo livello Worker; il browser è un adapter tuo, che andava scritto comunque per il gating (§6).
-- **Niente messaggistica.** È voluto: la messaggistica è di Yesod.
-- **Node 22 accanto a .NET** su Windows: una dipendenza in più.
-- **MCP nativo giovanissimo.** Il bug del glob ne è la prova; mitigazioni in §7.
-
----
-
-## 6. Design per i progetti seguiti (Jobbby)
-
-```
-            ┌───────────── fase 1 (passiva) ─────────────┐
- launcher / log scheduler ──► L0 run-observer ──► firma ricorrente? ──┐
-   (exit code + riga stato)     (no LLM)          heartbeat giornaliero ┤
-                                                                       ▼
- sotto-agente read-only ──► spec progetto ──► L1 reviewer (Pi) ──► notify_propose ──► Yesod v0 (Telegram/ntfy)
-  (Pi --tools read,grep…)   (+ obiettivo 1 riga     │ tool MCP adapter:
-                             confermato da te)       ├ run_summaries_list   (read)
-                                                     ├ proposals_history    (read)
-                                                     ├ project_spec         (read → delega)
-                                                     └ notify_propose       (notify)
-```
-
-- **Specifiche del progetto**: le ottiene un sotto-agente in sola lettura (Pi con `--tools read,grep,find,ls`, in un container con il repo montato `:ro`). Restituisce un JSON con `how_to_run`, `outputs`, `writes_to`, `success_signal`, `third_party_effects[]` e `objective_draft`. Tu confermi l'obiettivo di una riga; resta in llm-memory come `decision` del progetto.
-- **Interfaccia di delega pronta per lo spostamento**: il Livello 1 vede **solo un tool MCP** (`project_spec(project)` o, in generale, `delegate(capability, project, question, max_risk="read")`).
-  - In v0 l'implementazione nell'adapter lancia direttamente il sotto-agente.
-  - Quando c'è Yesod, la stessa chiamata diventa una richiesta a Yesod (HTTP o coda) e Yesod sceglie il worker.
-  - Il prompt, l'harness e il contratto non cambiano: cambia una classe nell'adapter.
-- **Riassunto per run, aggregazione, proposte, memoria delle proposte**: formati in `research.md` §11, contratto in `spike/contract/notification.schema.json`, esempio completo in `spike/common/canned_outputs.json`. Le regole operative:
-  - supporto minimo di 3 run più un gruppo di controllo;
-  - `dedupe_key` stabile; niente ri-proposte di rifiuti senza evidenza nuova; `supersedes`;
-  - la soglia si alza per le categorie con molti rifiuti;
-  - un **budget di notifiche** (es. massimo 3 al giorno, il resto nel digest).
-- **Classi di esecuzione nella proposta** (`execution_class`):
-  - `observe_only`: ammessa in fase 1;
-  - `test_env`: eseguibile solo verso target in allowlist di test;
-  - `needs_confirmation`: tutto ciò che tocca terzi.
-  - In fase 1 le ultime due sono solo *testo nella proposta*: l'agente non le esegue.
-- **Gating del browser, uguale con entrambi gli harness**:
-  1. Adapter browser tuo (Playwright, esposto via MCP) con operazioni esplicite: `navigate`, `snapshot`, `read`, `fill_draft` e `submit(confirm_token)`.
-  2. **Gate di rete**: `page.route("**/*")` abortisce le richieste non idempotenti (POST, PUT, PATCH, DELETE) verso host fuori da `test_targets`, a meno che non ci sia un `confirm_token` valido emesso da te tramite Yesod. Questo cattura anche i submit fatti con `Enter` o JavaScript.
-  3. Gate per tool (`risk.json`) come seconda linea. In Pi è l'estensione `tool_call`, in Hermes sarebbe `pre_tool_call` con `fail_closed: true`.
-  4. Non abilitare il toolset `browser` di Hermes né `browser_exec`: con codice arbitrario nel browser solo il punto 2 resta valido.
-- **Quale harness supporta meglio questo caso?** Sulla carta Hermes, che ha sotto-agenti e browser integrati. In pratica i due pezzi che contano li scriveresti comunque tu: il browser con gate di rete, e il sotto-agente read-only come worker isolato. Il vantaggio di Hermes qui è reale ma **piccolo**, e non compensa churn, peso e default da spegnere. [I]
-
----
-
-## 7. Rischi e mitigazioni
-
-| Rischio | Prob. | Mitigazione |
+| | Stato | Nota |
 |---|---|---|
-| Breaking change di Pi (8 in 3 mesi) | Alta | Versione pinnata esatta. Upgrade solo dopo che `python spike/run_spike.py --mode mock` (diventerà un test di contratto) passa. La porta `IReflectionRunner` più gli adapter MCP tengono il costo di cambio intorno alle 60 righe [M] |
-| MCP nativo di Pi immaturo (6 giorni) | Media | Usare solo stdio ed `exposure: direct`, niente glob. Il test di contratto verifica che i tool siano *dichiarati* (il mock registra `tool_names`) |
-| Progetto piccolo, cambi di direzione (Earendil) | Media | Uscita pronta: opzione C, o Hermes stesso, con lo stesso server MCP |
-| Modello economico che sbaglia il tool calling con un prompt di sistema minimale | **Da misurare** | È la domanda principale dello spike con chiave reale. Pi permette di aggiungere linee guida (`--append-system-prompt`) |
-| Pi senza permessi: un tool fa più del previsto | Media | Container senza credenziali né rete (salvo quella verso il provider LLM), repo `:ro`, solo tool adapter (`--no-builtin-tools`) |
-| Rumore di notifiche | Alta | Soglie calibrate sui verdetti, budget giornaliero, `dedupe_key` |
-| L'invio reale accidentale di una candidatura | Bassa, impatto alto | Gate di rete (§6), allowlist di test, `confirm_token` emesso solo da te |
+| P1 SQLite, non Postgres | Accettata | Ma il "tail di `audit_log` sul file" **non è sicuro** nel tuo deployment: vedi P1-bis |
+| P2 riuso degli score di llm-memory | Accettata, **applicata con un limite** | Vedi sotto |
+| P3 chi osserva le run | **Chiarita**: si legge l'esito dallo scheduler esistente | Vedi sotto |
+| P4 riassunti deterministici, LLM solo su fallimento | Accettata | — |
+| P5 gate di rete per il browser | Accettata | Ora testata (O2) |
+| P6 Yesod v0 senza harness | Accettata | — |
+| P7 Hermes scartato | Accettata | — |
+| P8 partire da Jobbby più heartbeat | Accettata | — |
+
+**P1-bis — Il watcher non deve leggere `memory.db` attraverso un bind mount.** Fatti [V]:
+- llm-memory gira in due modi, entrambi sullo **stesso file** `./data/memory.db`:
+  - in Docker: `docker-compose.yml` con `./data:/data` e `MEMORY_SQLITE_PATH=/data/memory.db`;
+  - nativo su Windows: `start_server.bat`, pensato per l'autostart, con `MEMORY_SQLITE_PATH=./data/memory.db`.
+
+  Anche il server MCP stdio (`python -m src.mcp_server.server`), lanciato dai client agentici sull'host, apre quel file.
+- La documentazione SQLite è esplicita: *"All processes using a database must be on the same host computer; WAL does not work over a network filesystem"*, perché il wal-index è un file `-shm` **mappato in memoria condivisa** (sqlite.org/wal.html). Anche un lettore partecipa a quel protocollo: segna nel wal-index fin dove sta leggendo.
+- Su Docker Desktop per Windows un percorso Windows montato in un container Linux attraversa il confine host/VM tramite il file sharing di WSL2. Docker stesso raccomanda di tenere i dati condivisi nel filesystem Linux o in un named volume (docs.docker.com, WSL best practices) [V per la raccomandazione].
+
+[I, fondata sulla regola SQLite] un processo Windows e uno nel container Linux **non sono "lo stesso host"** per la memoria condivisa del `-shm`. Un watcher sul lato opposto del bind mount rispetto al server può quindi leggere uno snapshot incoerente o, peggio, interferire con il checkpoint. Lo stesso vale tra due container sullo stesso bind mount di un percorso Windows [NV: dipende dal file sharing].
+
+**Rischio che esiste già oggi, indipendente dal watcher**: se il server nel container e un processo nativo su Windows (lo stdio MCP o `start_server.bat`) aprono insieme lo stesso `memory.db`, sei già in quella condizione. Te lo segnalo perché tocca llm-memory, non questo progetto.
+
+**Alternativa raccomandata (impatto zero su llm-memory)**: il watcher **legge via HTTP**, non dal file.
+- **Audit**: `GET /admin/audit?since=<iso>&limit=500` esiste già. Restituisce `id`, `action`, `entry_id` e `payload`, con `created_at` al microsecondo [V: `http_server.py`, `memory_service.py`].
+- **Cursore**: `since` = ultimo `created_at` visto. Il filtro è `>=`, quindi si deduplica per `id`.
+- **Score**: l'audit di `fast_write` non contiene gli score, quindi il watcher legge l'entry, via `GET /admin/fast-memory/{entry_id}` per le fast e via il tool MCP `memory.get` per le strong.
+- **Limite**: la query è `ORDER BY created_at DESC LIMIT 500`. Se tra due poll arrivano più di 500 eventi, i più vecchi si perdono. Mitigazione: poll ogni 2–5 s; se `count == limit` segnalo il buco e riparto con una finestra più stretta.
+- **Costo stimato**: zero modifiche a llm-memory; circa 80–120 righe di watcher .NET; carico trascurabile.
+
+Ci sono due alternative valide, che scarto per ora:
+- (b) il **watcher nello stesso ambiente** del server (stesso container, oppure entrambi nativi), che legge il file. È sicuro, ma lega il deployment del watcher a quello di llm-memory.
+- (c) **in futuro**, un endpoint `?after_id=` con ordinamento crescente: circa 15 righe in llm-memory, che eliminano il limite dei 500. Non l'ho implementato, come chiesto.
+
+**P2 — applicata, con un limite che ti segnalo.** `spike/common/gen_data.py` ora **chiama le funzioni reali di llm-memory** (`build_importance_metadata`, `build_fast_selection_metadata`) per generare i metadati degli eventi finti. Il Livello 0 (`level0.py`) usa solo quei campi, con i nomi originali:
+- per le strong entry, `importance_score/100`, che contiene già `surprise_score`, `novelty_score`, `inference_score` e `0,25 × negative_impact`;
+- per le fast entry, `selection_score × (1 − noise_penalty)`;
+- per i duplicati, l'esito `duplicate` del dedup di llm-memory.
+
+I limiti, misurati sui dati generati:
+- **In llm-memory `noise_penalty` riduce solo il boost di ricorrenza**: una nota ripetitiva con penalità 0,9 ha comunque `selection_score` 0,35 [M]. È uno score pensato per ordinare le distillazioni, non per la salienza: il Livello 0 deve applicare la penalità all'intero score, e lo dichiaro nel codice.
+- **Due segnali non esistono in llm-memory** e restano del Livello 0, dichiarati:
+  - l'`invalidate` di una `decision`, perché `memory.invalidate` non crea entry e non ha score;
+  - l'attraversamento di progetto.
+
+  La contraddizione tra decisioni è proprio il segnale più forte del batch saliente.
+
+Con i dati reali le decisioni del Livello 0 non cambiano (2 invocazioni su 26 eventi più 20 run) e il margine è ampio: 2,62 contro un massimo di 0,52 [M]. La soglia è stata ricalibrata (1,0) perché la scala degli score è diversa.
+
+**P3 — chiarita: l'esito si legge dallo scheduler esistente, non da un launcher di Yesod.** Concordo con la tua motivazione, e la rafforzo: Jobbby *invia candidature*. Lanciarlo da Yesod significherebbe che ogni invio reale parte da un processo nostro, cioè possederne le azioni irreversibili in una fase che deve essere passiva. L'osservatore legge solo:
+- **Docker**: `docker events --filter type=container --filter event=die` dà `exitCode` in push, quindi è event-driven senza polling;
+- **Task Scheduler di Windows**: `LastTaskResult` e `LastRunTime` (`Get-ScheduledTaskInfo`), con un poll ogni pochi minuti;
+- **riga di stato finale**: l'ultima riga del log che Jobbby già scrive, nel percorso che il sotto-agente in sola lettura scopre leggendo il repo.
+
+I limiti:
+- le run lanciate a mano, fuori dallo scheduler, non si vedono;
+- se Jobbby non scrive un log, il Livello 0 ha solo l'exit code.
+
+Tutti e due sono accettabili in fase 1.
 
 ---
 
-## 8. Cosa mi farebbe cambiare idea
+## 4. Evidenze (modello finto; 10 ripetizioni warm più 3 cold per cella)
 
-- **Lo spike con un modello reale** mostra che, con un modello economico (es. classe Haiku, Gemini Flash o un modello open), Pi produce tool call malformati o proposte peggiori in modo consistente rispetto a Hermes, che ha molte più linee guida d'uso dei tool nel prompt. Concretamente: un tasso di notifiche valide allo schema inferiore di oltre 10 punti, o una qualità giudicata inferiore su più della metà dei casi. In quel caso rivaluterei Hermes per il Livello 1, *non* per Yesod.
-- **Più di due regressioni MCP o di headless in Pi nel primo mese** di uso reale: passerei all'opzione C per il Livello 1, che è un loop breve, chiuso e senza bisogno di sessioni.
-- **Il Livello 1 deve diventare attivo** (usare e testare, con sotto-agenti e browser *dentro* il loop invece che nei worker): i built-in di Hermes peserebbero di più. Il gate di rete resterebbe obbligatorio.
-- **Hermes introduce un canale LTS** o un changelog per release con breaking change espliciti, e un modo per far fallire rumorosamente le configurazioni MCP incomplete. Il giudizio su stabilità cambierebbe.
-- **Decidi di volere comunque il gateway di Hermes come canale verso di te**: allora `hermes send` e il gateway entrano in Yesod come *componente di trasporto*, ma resto contrario a usarlo come loop.
+Fonte: `spike/results/summary-mock.md` e `summary-mock-cold.md`. Il mock risponde in millisecondi: le latenze sono **solo overhead del loop**.
+
+| scenario | Pi: ok / mediana s / token | Hermes: ok / mediana s / token | **C: ok / mediana s / token** |
+|---|---|---|---|
+| reflection | 10/10 · 0,52 · 4.491 | 10/10 · 3,50 · 7.638 | **10/10 · 1,01 · 3.530** |
+| noise (silenzio atteso) | 10/10 · 0,52 · 3.342 | 10/10 · 3,50 · 4.865 | **10/10 · 0,92 · 2.825** |
+| jobbby | 10/10 · 0,63 · 14.956 | 10/10 · 3,59 · 23.339 | **10/10 · 1,01 · 14.743** |
+| gate (tool irreversibile) | 10/10 bloccati · 0,54 | 10/10 bloccati · 3,47 | **10/10 bloccati · 0,95** |
+| browser_gate (solo tool read) | 10/10 · 0 scritture al terzo · 2,74 | 10/10 · 0 scritture · 7,84 | **10/10 · 0 scritture · 3,17** |
+
+"ok" = exit 0 più esito atteso più schema valido più evidenze corrette (o silenzio, o nessuna scrittura). I token sono stimati: body ÷ 4, somma su tutte le richieste della run. Per C la mediana include l'avvio del runtime .NET e del server MCP Python; il tempo interno al processo è 620 ms di mediana, e nel servizio il client MCP sarebbe già aperto.
+
+- **Stabilità**: 195 invocazioni su 195 riuscite (5 scenari × 3 celle × 10 warm più 3 cold), zero `violation`, zero scritture verso il sito terzo [M]. Sulle esecuzioni il mock non distingue le celle: è atteso, perché recita sempre la mossa giusta.
+- **Prompt di sistema aggiunto dal loop** [M]: Pi circa 1.960 caratteri, Hermes circa 7.990, **C zero**. È il dato che conta per O1: con C il prompt è interamente tuo.
+- **Gate**:
+  - scenario `gate` (tool marcato irreversibile): bloccato in tutte le celle;
+  - scenario `browser_gate` (solo tool read, gate di rete): 4 POST tentate e 4 bloccate per run, **0 scritture verso il sito terzo** in tutte le celle;
+  - test unitario del gate di rete: 6 su 6 (`results/browser-gate-test.txt`).
+- **Colla** (righe non vuote e non di commento, file specifici della cella): Pi 73, Hermes 60, **C 115**. Condivise: 186. Il confronto grezzo **penalizza C**:
+  - in C il conteggio include il loop *e* il gate *e* il parsing CLI che serve solo allo spike;
+  - per Pi e Hermes la colla è Python che fa le veci del codice C# che servirebbe in produzione (lancio del processo, parsing JSONL, generazione config), più il gate in TS o Python.
+
+  In produzione stimo C circa 70 righe in-process, contro Pi circa 100 tra runner C# di processo, gate TS e config [I].
+- **Trappole incontrate con C**: 1. Con l'SDK MCP 2.2.0, alla dispose il server stdio non termina da solo: viene ucciso allo scadere di `ShutdownTimeout`, 5 s di default. Nel servizio è irrilevante, perché il client vive quanto il processo; nello spike l'ho abbassato a 300 ms [M]. Il confronto con le trappole delle altre celle: Pi 3, Hermes 7.
+- **Modalità real**: verificata end-to-end per le tre celle contro un provider finto. Token e richieste vengono dall'usage dichiarato dal provider, non dal log del mock (`results/summary-real-plumbing.md`). **Nessuna API key nell'ambiente: i risultati real non ci sono.**
+
+---
+
+## 5. Design per i progetti seguiti (Jobbby) — invariato salvo il loop
+
+```
+ scheduler esistente ──► L0 run-observer ──► firma ricorrente? ──┐
+ (docker events / Task Scheduler,  (no LLM)   heartbeat giornaliero ┤
+  ultima riga del log)                                              ▼
+ worker read-only ──► spec progetto ──► L1 reviewer (.NET, M.E.AI) ──► notify_propose ──► Yesod v0
+ (Pi o Claude Code, repo :ro)              │ tool MCP adapter: run_summaries_list, proposals_history,
+                                           │ project_spec/delegate (read), notify_propose (notify)
+                                           └ browser (navigate/snapshot/click/press = read) + gate di rete
+```
+
+- **Delega pronta per Yesod**: il Livello 1 vede un tool MCP (`project_spec` o `delegate`). In v0 l'adapter lancia il worker; con Yesod la stessa chiamata passa da Yesod. Il loop non cambia.
+- **Proposte, memoria delle proposte, budget di notifiche**: come in `research.md` §11.
+
+---
+
+## 6. Opzioni considerate
+
+| | A. Pi | B. Hermes | **C. M.E.AI più MCP C#** |
+|---|---|---|---|
+| Ruolo dopo questa revisione | Worker read-only (candidato) | Scartato | **Loop del Livello 1** |
+| Integrazione .NET | Processo e JSONL | Processo o HTTP | In-process |
+| Prompt di sistema del loop [M] | ~2 KB, sostituibile | ~8 KB, solo identità sostituibile | Nessuno |
+| MCP | Nativo da 8 giorni; bug del glob | Nativo; fallimento silenzioso senza extra | SDK ufficiale: stabile dalla 1.0 (2026-02-25); major 2.0 il 2026-07-28; 2.2.0 dal 2026-08-13 [V: NuGet] |
+| Fallimenti silenziosi trovati [M] | 1 | 2 | 0 |
+| Retry, provider nativi | Inclusi | Inclusi | Da configurare (§2 O3) |
+| Stabilità API | 8 release con breaking change in 3 mesi | ~550 commit al giorno | M.E.AI stabile dalla 9.5 (2025-05); SDK MCP: una major in 7 mesi [V: NuGet] |
+
+---
+
+## 7. Cosa mi farebbe cambiare idea (soglie per lo spike real)
+
+Per ogni modello testato, 5 ripetizioni per cella.
+
+- **C perde sulla qualità in modo sistematico**: qualità media (rubrica `spike-plan.md` §5) inferiore di **più di 0,15** (scala 0–1) rispetto alla migliore cella, oppure tasso di notifiche valide e con evidenze corrette inferiore di **più di 10 punti**. In quel caso prima aggiungo a C un prompt di sistema con linee guida d'uso dei tool equivalenti a quelle di Pi; se il divario resta, si torna a Pi per il Livello 1.
+- **C ha errori di tool calling che le altre celle non hanno** con lo stesso provider: argomenti JSON malformati non recuperati, oppure loop interrotto. Significa che la gestione delle tool call di `Microsoft.Extensions.AI.OpenAI` su quel provider è peggiore. Si valuta il client nativo del provider o Pi.
+- **Qualunque `violation` in `gate` o `browser_gate`**, in qualunque cella: lo spike fallisce per quella cella, a prescindere dal resto.
+- **Il Livello 1 deve diventare attivo**, con sessioni lunghe, steering a metà run e compaction. Pi (RPC con `steer`) torna rilevante: per run brevi e chiuse C basta, per sessioni lunghe no.
+
+---
+
+## 8. Rischi e mitigazioni
+
+| Rischio | Mitigazione |
+|---|---|
+| Qualità con un modello economico non ancora misurata | `spike/run_real.sh` (due modelli, 5 ripetizioni, export alla cieca e giudice LLM opzionale); soglie in §7 |
+| Retry e timeout mancanti in C | Resilience handler di `HttpClient`, timeout per riflessione, `MaximumIterationsPerRequest` |
+| Breaking change dell'SDK MCP C# (una major in 7 mesi di versioni stabili) | Versione pinnata; lo spike mock come test di contratto a ogni upgrade |
+| Watcher su SQLite attraverso un bind mount | Lettura via HTTP (P1-bis) |
+| Invio reale accidentale | Gate di rete testato, più `confirm_token` monouso emesso solo da te |
+| GET con side effect non bloccate | Limite noto: allowlist degli host di navigazione per i progetti che lo richiedono |
+| Rumore di notifiche | Soglie calibrate sui verdetti, budget giornaliero, `dedupe_key` |
 
 ---
 
 ## 9. Conseguenze
 
-- Il servizio .NET contiene `IReflectionRunner` con l'implementazione `PiProcessRunner` (Process, JSONL, timeout, stdin chiuso, parsing di `message_end` e `usage`).
-- Il server MCP di adapter diventa il componente più importante. Lo scrivi una volta e vale per Livello 1, worker e Yesod: read su llm-memory e llm-context, `notify_propose`, `project_spec`/`delegate` e, più avanti, browser con gate di rete.
-- `risk.json` è il contratto di rischio, unico e versionato.
-- Lo spike in modalità mock diventa il **test di regressione** per ogni upgrade dell'harness.
-- Yesod v0 = notifier deterministico (Telegram/ntfy) più budget e digest. Niente LLM.
+- Il servizio .NET contiene `ReflectionRunner` (M.E.AI più client MCP persistente più `GatedFunction`). Non c'è nessun processo esterno nel percorso del Livello 1.
+- Il server MCP di adapter resta il componente centrale, condiviso da Livello 1, worker e, in futuro, Yesod.
+- `risk.json` resta il contratto unico; il confronto dei `test_targets` è per origin.
+- L'adapter browser con gate di rete è un componente a sé, con i suoi test.
+- Il watcher legge llm-memory via HTTP, non dal file.
+- Lo spike mock è il test di regressione per gli upgrade dell'SDK MCP e di M.E.AI.

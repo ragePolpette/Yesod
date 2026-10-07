@@ -1,3 +1,6 @@
 spike/results/work/
 __pycache__/
 *.pyc
+spike/dotnet/bin/
+spike/dotnet/obj/
+spike/dotnet/out/

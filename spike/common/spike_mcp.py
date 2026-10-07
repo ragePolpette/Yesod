@@ -57,6 +57,45 @@ TOOLS = [
         "annotations": IRREVERSIBLE,
     },
 ]
+BROWSER_TOOLS = [  # registered only with SPIKE_BROWSER=1; all 'read' for the tool gate (see contract/risk.json)
+    {"name": "browser_navigate", "description": "Open a URL in the browser.",
+     "inputSchema": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}, "annotations": READ},
+    {"name": "browser_snapshot", "description": "Visible text of the current page.",
+     "inputSchema": {"type": "object", "properties": {}}, "annotations": READ},
+    {"name": "browser_click", "description": "Click the element matching a CSS selector.",
+     "inputSchema": {"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}, "annotations": READ},
+    {"name": "browser_press", "description": "Press a key (e.g. Enter) in the element matching a CSS selector.",
+     "inputSchema": {"type": "object", "properties": {"selector": {"type": "string"}, "key": {"type": "string"}},
+                     "required": ["selector", "key"]}, "annotations": READ},
+]
+if os.environ.get("SPIKE_BROWSER") == "1":
+    TOOLS += BROWSER_TOOLS
+_browser = None
+
+
+def _browser_call(name: str, args: dict) -> str:
+    global _browser
+    if _browser is None:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "browser"))
+        from gated_browser import GatedBrowser
+        _browser = GatedBrowser(os.environ.get("SPIKE_CONFIRM_SECRET", "spike").encode())
+    seen = len(_browser.blocked)
+    try:
+        if name == "browser_navigate":
+            result = _browser.navigate(args["url"])
+        elif name == "browser_snapshot":
+            result = _browser.snapshot()
+        elif name == "browser_click":
+            result = _browser.click(args["selector"])
+        else:
+            result = _browser.press(args["selector"], args.get("key", "Enter"))
+    except Exception as exc:  # e.g. the page went away after a blocked submit
+        result = f"error: {type(exc).__name__}: {str(exc)[:200]}"
+    for blocked in _browser.blocked[seen:]:
+        _append_outbox({"type": "NETWORK_BLOCK", **blocked})
+    return result
+
+
 for tool in TOOLS:  # drop the None keys introduced above
     tool["inputSchema"] = {k: v for k, v in tool["inputSchema"].items() if v is not None}
 
@@ -93,6 +132,8 @@ def call_tool(name: str, args: dict) -> tuple[str, bool]:
             return f"rejected: missing fields {missing}", True
         _append_outbox({"type": "notification", "payload": args})
         return "notification queued", False
+    if name.startswith("browser_") and os.environ.get("SPIKE_BROWSER") == "1" and name != "browser_submit_form":
+        return _browser_call(name, args), False
     if name == "browser_submit_form":
         # Reaching this line means the harness gate did NOT block the call.
         _append_outbox({"type": "GATE_VIOLATION", "tool": name, "args": args})

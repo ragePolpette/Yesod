@@ -246,3 +246,35 @@ Cosa **non** ho potuto verificare [NV]:
 - Il comportamento dei due harness con un modello reale: tool calling malformato, retry, qualità.
 - Il funzionamento su Windows nativo, che entrambi dichiarano: lo spike gira su Linux.
 - Pi 1.0.4, non ancora pubblicato su npm.
+
+---
+
+## 12. Aggiornamento 2026-10-07: opzione C, SQLite cross-ambiente, gate di rete
+
+### Opzione C: `Microsoft.Extensions.AI` più SDK MCP C#
+
+- **Pacchetti** [V: NuGet]:
+  - `Microsoft.Extensions.AI` 10.10.0 (stabile dalla 9.5, maggio 2025);
+  - `Microsoft.Extensions.AI.OpenAI` 10.10.1;
+  - `ModelContextProtocol.Core` 2.2.0: stabile dalla 1.0 (2026-02-25), major 2.0 il 2026-07-28, 2.2.0 il 2026-08-13.
+- **API usate** [V: XML doc dei pacchetti, poi compilate ed eseguite]: `McpClient.CreateAsync` più `StdioClientTransport`, `ListToolsAsync()`, che restituisce `McpClientTool`, cioè un `AIFunction` con accesso a `ProtocolTool.Annotations`; `DelegatingAIFunction` per il gate; `ChatClientBuilder.UseFunctionInvocation` con `MaximumIterationsPerRequest`; `DelegatingChatClient` per contare le richieste.
+- **Comportamento misurato** [M]: alla `DisposeAsync` il client stdio non chiude lo stdin del server e lo termina allo scadere di `ShutdownTimeout`, 5 s di default. È rilevante solo se si crea un client per invocazione.
+- **Non verificato** [NV]: le implementazioni `IChatClient` native per Anthropic e Gemini e il loro supporto a caching e thinking.
+
+### SQLite in WAL tra host Windows e container
+
+- SQLite, *Write-Ahead Logging*: *"All processes using a database must be on the same host computer; WAL does not work over a network filesystem. This is because WAL requires all processes to share a small amount of memory…"* e *"the wal-index is implemented using an ordinary file that is mmapped"* — https://www.sqlite.org/wal.html [V]
+- SQLite, *SQLite Over a Network*: *"Host an SQLite database in WAL mode, but do all reads and writes from processes on the same machine that stores the database file. Implement a proxy that runs on the database machine that relays read/write requests from remote machines."* — https://www.sqlite.org/useovernet.html [V]
+- Docker Desktop, *WSL 2 best practices*: i file montati dal filesystem Windows passano dalla condivisione di file di WSL2; Docker raccomanda di tenere i dati in bind mount nel filesystem Linux o in named volume — https://docs.docker.com/desktop/features/wsl/best-practices/ [V]
+- llm-memory [V]:
+  - `docker-compose.yml` monta `./data:/data`, con `MEMORY_SQLITE_PATH=/data/memory.db`;
+  - `start_server.bat` (nativo, autostart) usa `MEMORY_SQLITE_PATH=./data/memory.db`, cioè lo stesso file;
+  - `SQLiteMemoryStore._conn` apre una connessione per operazione senza `busy_timeout`;
+  - `GET /admin/audit?since=&limit=` restituisce `id`, `action`, `entry_id`, `payload` e `created_at` al microsecondo, ordinati in modo decrescente con limite massimo 500;
+  - l'audit di `fast_write` non contiene gli score, che si leggono con `GET /admin/fast-memory/{entry_id}`.
+
+### Gate di rete del browser (Playwright 1.56, Chromium 141)
+
+- `BrowserContext.route` intercetta le richieste di tutte le pagine del contesto. Le richieste dei service worker lo scavalcano, quindi il contesto si crea con `service_workers="block"`. I WebSocket non passano da `route` e si gestiscono con `route_web_socket`: senza `connect_to_server()` la connessione non raggiunge il server [V: *"route will not intercept requests intercepted by Service Worker"* — https://playwright.dev/python/docs/api/class-browsercontext ; *"By default, the routed WebSocket will not connect to the server"* — https://playwright.dev/python/docs/api/class-websocketroute ; M: test].
+- [M] Con l'API sync, chiamare `ws.close()` dentro l'handler di `route_web_socket` va in deadlock. Basta non connettere.
+- [M] `sendBeacon` arriva al gate come POST con `resource_type="ping"`; il submit con Enter come POST `document`.

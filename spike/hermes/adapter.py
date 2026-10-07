@@ -25,12 +25,7 @@ auxiliary:
   title_generation:
     enabled: false   # otherwise one extra LLM call per run
 mcp_servers:
-  spike:
-    command: python3
-    args: ["{spike}/common/spike_mcp.py"]
-    env:
-      SPIKE_DATA_DIR: "{spike}/data"
-      SPIKE_OUTBOX: "{outbox}"
+  spike: {mcp}
 hooks:
   pre_tool_call:
     - command: "python3 {spike}/hermes/home/agent-hooks/gate.py"
@@ -39,10 +34,10 @@ hooks_auto_accept: true   # headless: no first-use consent prompt
 """
 
 
-def prepare(work: Path, llm: dict, outbox: Path) -> dict:
+def prepare(work: Path, llm: dict, mcp: dict) -> dict:
     home = work / "hermes-home"
     home.mkdir(parents=True, exist_ok=True)
-    (home / "config.yaml").write_text(CONFIG.format(model=llm["model"], base_url=llm["base_url"], spike=SPIKE, outbox=outbox), encoding="utf-8")
+    (home / "config.yaml").write_text(CONFIG.format(model=llm["model"], base_url=llm["base_url"], spike=SPIKE, mcp=json.dumps(mcp)), encoding="utf-8")
     return {"HERMES_HOME": str(home)}
 
 

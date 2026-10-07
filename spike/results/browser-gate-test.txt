@@ -1,0 +1,11 @@
+test_confirm_token_allows_exactly_one_matching_action (browser.test_network_gate.NetworkGate.test_confirm_token_allows_exactly_one_matching_action) ... ok
+test_every_vector_is_blocked_towards_third_parties (browser.test_network_gate.NetworkGate.test_every_vector_is_blocked_towards_third_parties) ... ok
+test_known_gap_side_effecting_get_passes (browser.test_network_gate.NetworkGate.test_known_gap_side_effecting_get_passes) ... ok
+test_same_vectors_do_send_to_a_test_target (browser.test_network_gate.NetworkGate.test_same_vectors_do_send_to_a_test_target) ... ok
+test_tool_gate_alone_lets_the_submit_through (browser.test_network_gate.NetworkGate.test_tool_gate_alone_lets_the_submit_through) ... ok
+test_websocket_to_third_party_never_connects (browser.test_network_gate.NetworkGate.test_websocket_to_third_party_never_connects) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 9.303s
+
+OK

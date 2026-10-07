@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 RISK = json.loads((Path(__file__).resolve().parent.parent / "contract" / "risk.json").read_text(encoding="utf-8"))
 
@@ -29,8 +30,18 @@ def decide(tool_name: str, args: dict | None = None, phase: str | None = None) -
     if action == "allow":
         return True, "allowed"
     if action == "allow_if_test_target":
-        url = str((args or {}).get("url", ""))
-        if any(url.startswith(prefix) for prefix in RISK["test_targets"]):
+        if is_test_target(str((args or {}).get("url", ""))):
             return True, "allowed: test target"
         return False, f"blocked: {name} is {risk}; requires confirmation outside test targets"
     return False, f"blocked: {name} is {risk}; not allowed in phase '{phase}' (requires confirmation)"
+
+
+def is_test_target(url: str) -> bool:
+    """Origin match (scheme + host + port if given), not a string prefix:
+    'http://localhost.evil.example' must not match 'http://localhost'."""
+    u = urlsplit(url)
+    for target in RISK["test_targets"]:
+        t = urlsplit(target)
+        if u.scheme == t.scheme and u.hostname == t.hostname and (t.port is None or t.port == u.port):
+            return True
+    return False

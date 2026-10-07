@@ -4,112 +4,125 @@
       "opened": "2026-09-28T07:00:00+00:00",
       "closed": "2026-09-28T08:30:24+00:00",
       "flush": "quiet",
-      "salience": 0.4,
+      "salience": 0.33,
       "reflect": false,
       "events": [
         {
           "id": "evt-001",
-          "score": 0.05,
+          "score": 0.035,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-002",
-          "score": 0.05,
+          "score": 0.035,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-003",
-          "score": 0.05,
+          "score": 0.035,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-004",
-          "score": 0.05,
+          "score": 0.035,
           "why": [
-            "type=note"
+            "selection_score=0.354929",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-005",
-          "score": 0.05,
+          "score": 0.035,
           "why": [
-            "type=note"
+            "selection_score=0.354929",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-006",
-          "score": 0.05,
+          "score": 0.035,
           "why": [
-            "type=note"
+            "selection_score=0.354929",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-007",
-          "score": 0.05,
+          "score": 0.036,
           "why": [
-            "type=note"
+            "selection_score=0.357813",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-008",
-          "score": 0.05,
+          "score": 0.036,
           "why": [
-            "type=note"
+            "selection_score=0.357813",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-009",
-          "score": 0.05,
+          "score": 0.036,
           "why": [
-            "type=note"
+            "selection_score=0.357813",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-010",
-          "score": 0.05,
+          "score": 0.036,
           "why": [
-            "type=note"
+            "selection_score=0.359858",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-011",
-          "score": 0.05,
+          "score": 0.036,
           "why": [
-            "type=note"
+            "selection_score=0.359858",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-012",
-          "score": 0.05,
+          "score": 0.036,
           "why": [
-            "type=note"
+            "selection_score=0.359858",
+            "noise_penalty=0.9"
           ]
         },
         {
           "id": "evt-013",
-          "score": 0.3,
+          "score": 0.26,
           "why": [
-            "type=fact"
+            "importance_score=26",
+            "negative_impact=0.0"
           ]
         },
         {
           "id": "evt-014",
           "score": 0.0,
           "why": [
-            "duplicate"
+            "llm-memory:duplicate"
           ]
         },
         {
           "id": "evt-015",
           "score": 0.0,
           "why": [
-            "duplicate"
+            "llm-memory:duplicate"
           ]
         }
       ]
@@ -118,14 +131,15 @@
       "opened": "2026-09-28T10:20:00+00:00",
       "closed": "2026-09-28T10:20:00+00:00",
       "flush": "quiet",
-      "salience": 0.8,
+      "salience": 0.34,
       "reflect": false,
       "events": [
         {
           "id": "evt-016",
-          "score": 0.8,
+          "score": 0.34,
           "why": [
-            "type=decision"
+            "importance_score=34",
+            "negative_impact=0.0"
           ]
         }
       ]
@@ -134,29 +148,31 @@
       "opened": "2026-09-28T11:20:00+00:00",
       "closed": "2026-09-28T11:23:00+00:00",
       "flush": "quiet",
-      "salience": 3.3,
+      "salience": 2.62,
       "reflect": true,
       "events": [
         {
           "id": "evt-017",
-          "score": 1.5,
+          "score": 1.0,
           "why": [
-            "type=invalidate",
+            "invalidate",
             "contradicts-decision"
           ]
         },
         {
           "id": "evt-018",
-          "score": 0.8,
+          "score": 0.62,
           "why": [
-            "type=decision"
+            "importance_score=62",
+            "negative_impact=0.6"
           ]
         },
         {
           "id": "evt-019",
           "score": 0.8,
           "why": [
-            "type=assumption",
+            "importance_score=60",
+            "negative_impact=0.4",
             "cross-project"
           ]
         }
@@ -166,49 +182,55 @@
       "opened": "2026-09-28T12:00:00+00:00",
       "closed": "2026-09-28T12:55:00+00:00",
       "flush": "quiet",
-      "salience": 0.15,
+      "salience": 0.52,
       "reflect": false,
       "events": [
         {
           "id": "evt-020",
-          "score": 0.05,
+          "score": 0.175,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.5"
           ]
         },
         {
           "id": "evt-021",
-          "score": 0.05,
+          "score": 0.175,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.5"
           ]
         },
         {
           "id": "evt-022",
-          "score": 0.05,
+          "score": 0.175,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.5"
           ]
         },
         {
           "id": "evt-023",
-          "score": 0.05,
+          "score": 0.175,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.5"
           ]
         },
         {
           "id": "evt-024",
-          "score": 0.05,
+          "score": 0.175,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.5"
           ]
         },
         {
           "id": "evt-025",
-          "score": 0.05,
+          "score": 0.175,
           "why": [
-            "type=note"
+            "selection_score=0.35",
+            "noise_penalty=0.5"
           ]
         }
       ]
@@ -217,15 +239,15 @@
       "opened": "2026-09-28T17:00:00+00:00",
       "closed": "2026-09-28T17:00:00+00:00",
       "flush": "end_of_stream",
-      "salience": 0.9,
+      "salience": 0.36,
       "reflect": false,
       "events": [
         {
           "id": "evt-026",
-          "score": 0.9,
+          "score": 0.36,
           "why": [
-            "type=decision",
-            "explicit-importance"
+            "importance_score=36",
+            "negative_impact=0.0"
           ]
         }
       ]

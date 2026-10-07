@@ -22,11 +22,25 @@ from pathlib import Path
 DATA = Path(__file__).resolve().parent.parent / "data"
 
 # --- fast path ---------------------------------------------------------------
+#
+# Per-event salience comes from what llm-memory already computes and stores on every write
+# (src/service/importance_scoring.py), never from weights of our own:
+#   strong entries (memory.add)   metadata.importance_score / 100   (surprise, novelty, inference, + 0.25*negative_impact)
+#   fast entries (memory.log_fast) metadata.fast_memory_scoring.selection_score * (1 - noise_penalty)
+#                                  (llm-memory applies noise_penalty only to the recurrence boost, so a noisy
+#                                   note keeps selection_score=0.35; Level 0 applies it to the whole score)
+#   duplicates                     audit write_attempt with outcome=duplicate -> 0 (llm-memory's own dedup)
+# Two structural signals are Level 0's own, because llm-memory does not score them:
+#   invalidate of a decision      memory.invalidate creates no new entry and carries no importance metadata
+#   cross-project tag             scope crossing is not part of importance_score
 
-OP_WEIGHT = {"invalidate": 1.0, "decision": 0.8, "assumption": 0.5, "fact": 0.3, "note": 0.05}
+INVALIDATE_BASE = 0.5
+CONTRADICTION_BONUS = 0.5
+CROSS_PROJECT_BONUS = 0.2
 QUIET = timedelta(minutes=15)      # flush after this much silence...
 MAX_WAIT = timedelta(hours=2)      # ...but never hold a batch longer than this
-THRESHOLD = 1.5                    # batch salience needed to wake Level 1
+THRESHOLD = 1.0                    # batch salience needed to wake Level 1 (calibrate on real verdicts)
+SUBSTANTIVE = 0.3                  # events below this do not count for topic density
 
 
 def _ts(value: str) -> datetime:
@@ -38,35 +52,37 @@ def _fingerprint(text: str) -> str:
     return hashlib.sha1(normalized.encode()).hexdigest()[:12]
 
 
-def event_score(event: dict, seen: set[str], decisions: set[str]) -> tuple[float, list[str]]:
-    reasons: list[str] = []
-    fp = _fingerprint(event.get("content", ""))
-    if fp in seen:
-        return 0.0, ["duplicate"]
-    seen.add(fp)
-    kind = "invalidate" if event.get("op") == "invalidate" else event.get("type", "note")
-    score = OP_WEIGHT.get(kind, 0.1)
-    reasons.append(f"type={kind}")
-    if event.get("op") == "invalidate" and event.get("target") in decisions:
-        score += 0.5
-        reasons.append("contradicts-decision")
+def event_score(event: dict, decisions: set[str]) -> tuple[float, list[str]]:
+    audit = event.get("audit", {})
+    scores = event.get("llm_memory") or {}
+    if audit.get("outcome") == "duplicate":
+        return 0.0, ["llm-memory:duplicate"]
+    if audit.get("action") == "invalidate":
+        score, reasons = INVALIDATE_BASE, ["invalidate"]
+        if event.get("target") in decisions:
+            score += CONTRADICTION_BONUS
+            reasons.append("contradicts-decision")
+    elif "importance_score" in scores:
+        score = scores["importance_score"] / 100
+        reasons = [f"importance_score={scores['importance_score']}", f"negative_impact={scores['negative_impact']}"]
+    elif "selection_score" in scores:
+        score = scores["selection_score"] * (1 - scores.get("noise_penalty", 0.0))
+        reasons = [f"selection_score={scores['selection_score']}", f"noise_penalty={scores.get('noise_penalty')}"]
+    else:
+        score, reasons = 0.0, ["no-llm-memory-score"]
     if "cross-project" in event.get("tags", []):
-        score += 0.3
+        score += CROSS_PROJECT_BONUS
         reasons.append("cross-project")
-    if "importance" in event:
-        score = max(score, float(event["importance"]))
-        reasons.append("explicit-importance")
     if event.get("type") == "decision":
         decisions.add(event["id"])
-    return round(score, 2), reasons
+    return round(score, 3), reasons
 
 
 def batch_salience(scored: list[tuple[dict, float]]) -> float:
     # Sum of the 3 strongest events plus a small topic-density bonus: one strong event
     # or a tight cluster wakes Level 1, a long tail of trivia does not.
     top = sorted((s for _, s in scored), reverse=True)[:3]
-    # Density counts only substantive events (>= fact weight), so a burst of trivia stays quiet.
-    tags = Counter(tag for event, s in scored if s >= OP_WEIGHT["fact"] for tag in event.get("tags", []))
+    tags = Counter(tag for event, s in scored if s >= SUBSTANTIVE for tag in event.get("tags", []))
     density = max(tags.values(), default=0)
     return round(sum(top) + min(0.5, 0.1 * max(0, density - 1)), 2)
 
@@ -85,7 +101,6 @@ class Batch:
 
 
 def debounce(events: list[dict]) -> list[dict]:
-    seen: set[str] = set()
     decisions: set[str] = set()
     batches: list[dict] = []
     current = Batch()
@@ -108,7 +123,7 @@ def debounce(events: list[dict]) -> list[dict]:
             flush("quiet")
         elif current.events and now - current.opened > MAX_WAIT:
             flush("max_wait")
-        score, why = event_score(event, seen, decisions)
+        score, why = event_score(event, decisions)
         current.events.append((event, score, why))
     flush("end_of_stream")
     return batches

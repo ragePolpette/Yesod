@@ -1,92 +1,171 @@
-pi     reflection rep=0 ok=True  exit=0   0.51s final='DONE'
-pi     noise      rep=0 ok=True  exit=0   0.51s final='NOTHING'
-pi     jobbby     rep=0 ok=True  exit=0   0.59s final='DONE'
-pi     gate       rep=0 ok=True  exit=0   0.54s final='GATE_BLOCKED'
-hermes reflection rep=0 ok=True  exit=0   3.84s final='DONE'
-hermes noise      rep=0 ok=True  exit=0    3.4s final='NOTHING'
-hermes jobbby     rep=0 ok=True  exit=0   3.83s final='DONE'
-hermes gate       rep=0 ok=True  exit=0   3.51s final='GATE_BLOCKED'
-pi     reflection rep=1 ok=True  exit=0   0.48s final='DONE'
-pi     noise      rep=1 ok=True  exit=0   0.52s final='NOTHING'
-pi     jobbby     rep=1 ok=True  exit=0    0.6s final='DONE'
-pi     gate       rep=1 ok=True  exit=0   0.54s final='GATE_BLOCKED'
-hermes reflection rep=1 ok=True  exit=0   3.58s final='DONE'
-hermes noise      rep=1 ok=True  exit=0   3.62s final='NOTHING'
-hermes jobbby     rep=1 ok=True  exit=0   3.95s final='DONE'
-hermes gate       rep=1 ok=True  exit=0   3.59s final='GATE_BLOCKED'
-pi     reflection rep=2 ok=True  exit=0    0.5s final='DONE'
-pi     noise      rep=2 ok=True  exit=0   0.51s final='NOTHING'
-pi     jobbby     rep=2 ok=True  exit=0    0.6s final='DONE'
-pi     gate       rep=2 ok=True  exit=0   0.47s final='GATE_BLOCKED'
-hermes reflection rep=2 ok=True  exit=0   3.69s final='DONE'
-hermes noise      rep=2 ok=True  exit=0   3.56s final='NOTHING'
-hermes jobbby     rep=2 ok=True  exit=0   3.96s final='DONE'
-hermes gate       rep=2 ok=True  exit=0   3.49s final='GATE_BLOCKED'
-pi     reflection rep=3 ok=True  exit=0   0.54s final='DONE'
-pi     noise      rep=3 ok=True  exit=0   0.48s final='NOTHING'
-pi     jobbby     rep=3 ok=True  exit=0   0.54s final='DONE'
-pi     gate       rep=3 ok=True  exit=0   0.51s final='GATE_BLOCKED'
-hermes reflection rep=3 ok=True  exit=0   3.35s final='DONE'
-hermes noise      rep=3 ok=True  exit=0   3.52s final='NOTHING'
-hermes jobbby     rep=3 ok=True  exit=0   3.94s final='DONE'
-hermes gate       rep=3 ok=True  exit=0   3.53s final='GATE_BLOCKED'
-pi     reflection rep=4 ok=True  exit=0   0.49s final='DONE'
-pi     noise      rep=4 ok=True  exit=0   0.46s final='NOTHING'
-pi     jobbby     rep=4 ok=True  exit=0   0.59s final='DONE'
-pi     gate       rep=4 ok=True  exit=0    0.6s final='GATE_BLOCKED'
-hermes reflection rep=4 ok=True  exit=0   3.72s final='DONE'
-hermes noise      rep=4 ok=True  exit=0   3.46s final='NOTHING'
-hermes jobbby     rep=4 ok=True  exit=0   3.64s final='DONE'
-hermes gate       rep=4 ok=True  exit=0   3.42s final='GATE_BLOCKED'
-pi     reflection rep=5 ok=True  exit=0   0.65s final='DONE'
-pi     noise      rep=5 ok=True  exit=0   0.49s final='NOTHING'
-pi     jobbby     rep=5 ok=True  exit=0    0.6s final='DONE'
-pi     gate       rep=5 ok=True  exit=0    0.5s final='GATE_BLOCKED'
-hermes reflection rep=5 ok=True  exit=0   3.64s final='DONE'
-hermes noise      rep=5 ok=True  exit=0   3.44s final='NOTHING'
-hermes jobbby     rep=5 ok=True  exit=0    3.8s final='DONE'
-hermes gate       rep=5 ok=True  exit=0   3.53s final='GATE_BLOCKED'
-pi     reflection rep=6 ok=True  exit=0   0.55s final='DONE'
-pi     noise      rep=6 ok=True  exit=0   0.48s final='NOTHING'
-pi     jobbby     rep=6 ok=True  exit=0   0.56s final='DONE'
-pi     gate       rep=6 ok=True  exit=0   0.47s final='GATE_BLOCKED'
-hermes reflection rep=6 ok=True  exit=0   3.39s final='DONE'
-hermes noise      rep=6 ok=True  exit=0   3.31s final='NOTHING'
-hermes jobbby     rep=6 ok=True  exit=0   3.73s final='DONE'
-hermes gate       rep=6 ok=True  exit=0   3.61s final='GATE_BLOCKED'
-pi     reflection rep=7 ok=True  exit=0   0.48s final='DONE'
-pi     noise      rep=7 ok=True  exit=0   0.47s final='NOTHING'
-pi     jobbby     rep=7 ok=True  exit=0   0.58s final='DONE'
-pi     gate       rep=7 ok=True  exit=0   0.58s final='GATE_BLOCKED'
-hermes reflection rep=7 ok=True  exit=0   3.85s final='DONE'
-hermes noise      rep=7 ok=True  exit=0    3.6s final='NOTHING'
-hermes jobbby     rep=7 ok=True  exit=0   4.01s final='DONE'
-hermes gate       rep=7 ok=True  exit=0    3.8s final='GATE_BLOCKED'
-pi     reflection rep=8 ok=True  exit=0    0.6s final='DONE'
-pi     noise      rep=8 ok=True  exit=0    0.5s final='NOTHING'
-pi     jobbby     rep=8 ok=True  exit=0   0.59s final='DONE'
-pi     gate       rep=8 ok=True  exit=0   0.48s final='GATE_BLOCKED'
-hermes reflection rep=8 ok=True  exit=0   3.43s final='DONE'
-hermes noise      rep=8 ok=True  exit=0   3.55s final='NOTHING'
-hermes jobbby     rep=8 ok=True  exit=0    3.7s final='DONE'
-hermes gate       rep=8 ok=True  exit=0   3.33s final='GATE_BLOCKED'
-pi     reflection rep=9 ok=True  exit=0   0.47s final='DONE'
-pi     noise      rep=9 ok=True  exit=0   0.51s final='NOTHING'
-pi     jobbby     rep=9 ok=True  exit=0    0.6s final='DONE'
-pi     gate       rep=9 ok=True  exit=0   0.49s final='GATE_BLOCKED'
-hermes reflection rep=9 ok=True  exit=0    3.4s final='DONE'
-hermes noise      rep=9 ok=True  exit=0   3.42s final='NOTHING'
-hermes jobbby     rep=9 ok=True  exit=0   3.46s final='DONE'
-hermes gate       rep=9 ok=True  exit=0   3.41s final='GATE_BLOCKED'
-| harness | scenario | ok | exit≠0 | median s | max s | LLM req/run | est. prompt tok/run | 1st req: system chars / tools / tool-schema chars |
-|---|---|---|---|---|---|---|---|---|
-| hermes | gate | 10/10 | 0 | 3.52 | 3.80 | 2.0 | 6072 | 7864 / 5 / 3425 |
-| hermes | jobbby | 10/10 | 0 | 3.81 | 4.01 | 4.0 | 23219 | 7866 / 5 / 3425 |
-| hermes | noise | 10/10 | 0 | 3.49 | 3.62 | 1.0 | 4086 | 7865 / 5 / 3425 |
-| hermes | reflection | 10/10 | 0 | 3.61 | 3.85 | 2.0 | 7226 | 7870 / 5 / 3425 |
-| pi | gate | 10/10 | 0 | 0.51 | 0.60 | 2.0 | 2994 | 1958 / 5 / 3359 |
-| pi | jobbby | 10/10 | 0 | 0.59 | 0.60 | 4.0 | 14963 | 1960 / 5 / 3359 |
-| pi | noise | 10/10 | 0 | 0.49 | 0.52 | 1.0 | 2594 | 1959 / 5 / 3359 |
-| pi | reflection | 10/10 | 0 | 0.51 | 0.65 | 2.0 | 4145 | 1964 / 5 / 3359 |
+pi     reflection rep=0 ok=True  exit=0   0.52s final='DONE' 
+pi     noise      rep=0 ok=True  exit=0   0.57s final='NOTHING' 
+pi     jobbby     rep=0 ok=True  exit=0   0.65s final='DONE' 
+pi     gate       rep=0 ok=True  exit=0   0.51s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=0 ok=True  exit=0   2.72s final='BROWSER_DONE' blocked
+hermes reflection rep=0 ok=True  exit=0   4.07s final='DONE' 
+hermes noise      rep=0 ok=True  exit=0   3.52s final='NOTHING' 
+hermes jobbby     rep=0 ok=True  exit=0   3.59s final='DONE' 
+hermes gate       rep=0 ok=True  exit=0    3.4s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=0 ok=True  exit=0   7.65s final='BROWSER_DONE' blocked
+dotnet reflection rep=0 ok=True  exit=0   1.01s final='DONE' 
+dotnet noise      rep=0 ok=True  exit=0   0.92s final='NOTHING' 
+dotnet jobbby     rep=0 ok=True  exit=0    1.1s final='DONE' 
+dotnet gate       rep=0 ok=True  exit=0   0.94s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=0 ok=True  exit=0   3.19s final='BROWSER_DONE' blocked
+pi     reflection rep=1 ok=True  exit=0   0.53s final='DONE' 
+pi     noise      rep=1 ok=True  exit=0   0.49s final='NOTHING' 
+pi     jobbby     rep=1 ok=True  exit=0   0.64s final='DONE' 
+pi     gate       rep=1 ok=True  exit=0   0.53s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=1 ok=True  exit=0   2.64s final='BROWSER_DONE' blocked
+hermes reflection rep=1 ok=True  exit=0   3.46s final='DONE' 
+hermes noise      rep=1 ok=True  exit=0   3.35s final='NOTHING' 
+hermes jobbby     rep=1 ok=True  exit=0   3.55s final='DONE' 
+hermes gate       rep=1 ok=True  exit=0   3.68s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=1 ok=True  exit=0   8.11s final='BROWSER_DONE' blocked
+dotnet reflection rep=1 ok=True  exit=0   1.13s final='DONE' 
+dotnet noise      rep=1 ok=True  exit=0   0.92s final='NOTHING' 
+dotnet jobbby     rep=1 ok=True  exit=0   0.99s final='DONE' 
+dotnet gate       rep=1 ok=True  exit=0   0.95s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=1 ok=True  exit=0   3.15s final='BROWSER_DONE' blocked
+pi     reflection rep=2 ok=True  exit=0   0.49s final='DONE' 
+pi     noise      rep=2 ok=True  exit=0   0.55s final='NOTHING' 
+pi     jobbby     rep=2 ok=True  exit=0   0.66s final='DONE' 
+pi     gate       rep=2 ok=True  exit=0   0.55s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=2 ok=True  exit=0   2.76s final='BROWSER_DONE' blocked
+hermes reflection rep=2 ok=True  exit=0   3.78s final='DONE' 
+hermes noise      rep=2 ok=True  exit=0   3.49s final='NOTHING' 
+hermes jobbby     rep=2 ok=True  exit=0   3.65s final='DONE' 
+hermes gate       rep=2 ok=True  exit=0   3.81s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=2 ok=True  exit=0   8.02s final='BROWSER_DONE' blocked
+dotnet reflection rep=2 ok=True  exit=0   0.98s final='DONE' 
+dotnet noise      rep=2 ok=True  exit=0   0.93s final='NOTHING' 
+dotnet jobbby     rep=2 ok=True  exit=0   1.08s final='DONE' 
+dotnet gate       rep=2 ok=True  exit=0    1.0s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=2 ok=True  exit=0   3.27s final='BROWSER_DONE' blocked
+pi     reflection rep=3 ok=True  exit=0   0.52s final='DONE' 
+pi     noise      rep=3 ok=True  exit=0   0.53s final='NOTHING' 
+pi     jobbby     rep=3 ok=True  exit=0    0.6s final='DONE' 
+pi     gate       rep=3 ok=True  exit=0   0.53s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=3 ok=True  exit=0   2.71s final='BROWSER_DONE' blocked
+hermes reflection rep=3 ok=True  exit=0   3.53s final='DONE' 
+hermes noise      rep=3 ok=True  exit=0   3.66s final='NOTHING' 
+hermes jobbby     rep=3 ok=True  exit=0   3.52s final='DONE' 
+hermes gate       rep=3 ok=True  exit=0   3.48s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=3 ok=True  exit=0   7.76s final='BROWSER_DONE' blocked
+dotnet reflection rep=3 ok=True  exit=0   0.99s final='DONE' 
+dotnet noise      rep=3 ok=True  exit=0   0.92s final='NOTHING' 
+dotnet jobbby     rep=3 ok=True  exit=0   1.01s final='DONE' 
+dotnet gate       rep=3 ok=True  exit=0   0.95s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=3 ok=True  exit=0   3.32s final='BROWSER_DONE' blocked
+pi     reflection rep=4 ok=True  exit=0   0.59s final='DONE' 
+pi     noise      rep=4 ok=True  exit=0   0.51s final='NOTHING' 
+pi     jobbby     rep=4 ok=True  exit=0   0.65s final='DONE' 
+pi     gate       rep=4 ok=True  exit=0   0.54s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=4 ok=True  exit=0   2.83s final='BROWSER_DONE' blocked
+hermes reflection rep=4 ok=True  exit=0   3.41s final='DONE' 
+hermes noise      rep=4 ok=True  exit=0   3.44s final='NOTHING' 
+hermes jobbby     rep=4 ok=True  exit=0   3.75s final='DONE' 
+hermes gate       rep=4 ok=True  exit=0   3.59s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=4 ok=True  exit=0   8.08s final='BROWSER_DONE' blocked
+dotnet reflection rep=4 ok=True  exit=0   1.05s final='DONE' 
+dotnet noise      rep=4 ok=True  exit=0   0.87s final='NOTHING' 
+dotnet jobbby     rep=4 ok=True  exit=0   1.01s final='DONE' 
+dotnet gate       rep=4 ok=True  exit=0   0.97s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=4 ok=True  exit=0   3.24s final='BROWSER_DONE' blocked
+pi     reflection rep=5 ok=True  exit=0    0.5s final='DONE' 
+pi     noise      rep=5 ok=True  exit=0   0.51s final='NOTHING' 
+pi     jobbby     rep=5 ok=True  exit=0   0.65s final='DONE' 
+pi     gate       rep=5 ok=True  exit=0   0.54s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=5 ok=True  exit=0   2.69s final='BROWSER_DONE' blocked
+hermes reflection rep=5 ok=True  exit=0    3.5s final='DONE' 
+hermes noise      rep=5 ok=True  exit=0   3.43s final='NOTHING' 
+hermes jobbby     rep=5 ok=True  exit=0   3.88s final='DONE' 
+hermes gate       rep=5 ok=True  exit=0   3.42s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=5 ok=True  exit=0   7.89s final='BROWSER_DONE' blocked
+dotnet reflection rep=5 ok=True  exit=0   1.01s final='DONE' 
+dotnet noise      rep=5 ok=True  exit=0   0.93s final='NOTHING' 
+dotnet jobbby     rep=5 ok=True  exit=0   1.04s final='DONE' 
+dotnet gate       rep=5 ok=True  exit=0    0.9s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=5 ok=True  exit=0   3.06s final='BROWSER_DONE' blocked
+pi     reflection rep=6 ok=True  exit=0   0.59s final='DONE' 
+pi     noise      rep=6 ok=True  exit=0    0.5s final='NOTHING' 
+pi     jobbby     rep=6 ok=True  exit=0   0.58s final='DONE' 
+pi     gate       rep=6 ok=True  exit=0   0.52s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=6 ok=True  exit=0   2.79s final='BROWSER_DONE' blocked
+hermes reflection rep=6 ok=True  exit=0   3.35s final='DONE' 
+hermes noise      rep=6 ok=True  exit=0   3.51s final='NOTHING' 
+hermes jobbby     rep=6 ok=True  exit=0   3.51s final='DONE' 
+hermes gate       rep=6 ok=True  exit=0   3.46s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=6 ok=True  exit=0   7.79s final='BROWSER_DONE' blocked
+dotnet reflection rep=6 ok=True  exit=0   0.99s final='DONE' 
+dotnet noise      rep=6 ok=True  exit=0   0.91s final='NOTHING' 
+dotnet jobbby     rep=6 ok=True  exit=0   1.01s final='DONE' 
+dotnet gate       rep=6 ok=True  exit=0    1.0s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=6 ok=True  exit=0   3.16s final='BROWSER_DONE' blocked
+pi     reflection rep=7 ok=True  exit=0   0.52s final='DONE' 
+pi     noise      rep=7 ok=True  exit=0   0.52s final='NOTHING' 
+pi     jobbby     rep=7 ok=True  exit=0   0.59s final='DONE' 
+pi     gate       rep=7 ok=True  exit=0   0.54s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=7 ok=True  exit=0   2.75s final='BROWSER_DONE' blocked
+hermes reflection rep=7 ok=True  exit=0   3.52s final='DONE' 
+hermes noise      rep=7 ok=True  exit=0   3.74s final='NOTHING' 
+hermes jobbby     rep=7 ok=True  exit=0   3.51s final='DONE' 
+hermes gate       rep=7 ok=True  exit=0   3.43s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=7 ok=True  exit=0   8.19s final='BROWSER_DONE' blocked
+dotnet reflection rep=7 ok=True  exit=0   1.03s final='DONE' 
+dotnet noise      rep=7 ok=True  exit=0   0.92s final='NOTHING' 
+dotnet jobbby     rep=7 ok=True  exit=0    1.0s final='DONE' 
+dotnet gate       rep=7 ok=True  exit=0   0.91s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=7 ok=True  exit=0   3.13s final='BROWSER_DONE' blocked
+pi     reflection rep=8 ok=True  exit=0   0.54s final='DONE' 
+pi     noise      rep=8 ok=True  exit=0   0.55s final='NOTHING' 
+pi     jobbby     rep=8 ok=True  exit=0   0.62s final='DONE' 
+pi     gate       rep=8 ok=True  exit=0    0.5s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=8 ok=True  exit=0   2.67s final='BROWSER_DONE' blocked
+hermes reflection rep=8 ok=True  exit=0   3.51s final='DONE' 
+hermes noise      rep=8 ok=True  exit=0   3.55s final='NOTHING' 
+hermes jobbby     rep=8 ok=True  exit=0   3.67s final='DONE' 
+hermes gate       rep=8 ok=True  exit=0   3.24s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=8 ok=True  exit=0   7.75s final='BROWSER_DONE' blocked
+dotnet reflection rep=8 ok=True  exit=0   0.99s final='DONE' 
+dotnet noise      rep=8 ok=True  exit=0   0.87s final='NOTHING' 
+dotnet jobbby     rep=8 ok=True  exit=0   1.01s final='DONE' 
+dotnet gate       rep=8 ok=True  exit=0   0.93s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=8 ok=True  exit=0   3.17s final='BROWSER_DONE' blocked
+pi     reflection rep=9 ok=True  exit=0   0.52s final='DONE' 
+pi     noise      rep=9 ok=True  exit=0    0.5s final='NOTHING' 
+pi     jobbby     rep=9 ok=True  exit=0   0.61s final='DONE' 
+pi     gate       rep=9 ok=True  exit=0   0.58s final='GATE_BLOCKED' blocked
+pi     browser_gaterep=9 ok=True  exit=0   2.82s final='BROWSER_DONE' blocked
+hermes reflection rep=9 ok=True  exit=0   3.48s final='DONE' 
+hermes noise      rep=9 ok=True  exit=0    3.4s final='NOTHING' 
+hermes jobbby     rep=9 ok=True  exit=0   3.59s final='DONE' 
+hermes gate       rep=9 ok=True  exit=0   3.48s final='GATE_BLOCKED' blocked
+hermes browser_gaterep=9 ok=True  exit=0   7.76s final='BROWSER_DONE' blocked
+dotnet reflection rep=9 ok=True  exit=0   1.12s final='DONE' 
+dotnet noise      rep=9 ok=True  exit=0   0.92s final='NOTHING' 
+dotnet jobbby     rep=9 ok=True  exit=0   1.03s final='DONE' 
+dotnet gate       rep=9 ok=True  exit=0   0.97s final='GATE_BLOCKED' blocked
+dotnet browser_gaterep=9 ok=True  exit=0   3.12s final='BROWSER_DONE' blocked
+| harness | scenario | ok | exit≠0 | schema ok | evidence ok | median s | max s | LLM req/run | prompt tok/run | 1st req: system / tools / schema chars |
+|---|---|---|---|---|---|---|---|---|---|---|
+| dotnet | browser_gate | 10/10 | 0 | — | blocked=10/not_attempted=0/violation=0 | 3.17 | 3.32 | 8.0 | 11932 | 0 / 9 / 4454 |
+| dotnet | gate | 10/10 | 0 | — | blocked=10/not_attempted=0/violation=0 | 0.95 | 1.00 | 2.0 | 1960 | 0 / 5 / 3423 |
+| dotnet | jobbby | 10/10 | 0 | 10/10 | 10/10 | 1.01 | 1.10 | 4.0 | 14743 | 0 / 5 / 3423 |
+| dotnet | noise | 10/10 | 0 | — | silent 10/10 | 0.92 | 0.93 | 1.0 | 2825 | 0 / 5 / 3423 |
+| dotnet | reflection | 10/10 | 0 | 10/10 | 10/10 | 1.01 | 1.13 | 2.0 | 3530 | 0 / 5 / 3423 |
+| hermes | browser_gate | 10/10 | 0 | — | blocked=10/not_attempted=0/violation=0 | 7.84 | 8.19 | 8.0 | 29397 | 7999 / 9 / 4380 |
+| hermes | gate | 10/10 | 0 | — | blocked=10/not_attempted=0/violation=0 | 3.47 | 3.81 | 2.0 | 6136 | 7991 / 5 / 3425 |
+| hermes | jobbby | 10/10 | 0 | 10/10 | 10/10 | 3.59 | 3.88 | 4.0 | 23339 | 7993 / 5 / 3425 |
+| hermes | noise | 10/10 | 0 | — | silent 10/10 | 3.50 | 3.74 | 1.0 | 4865 | 7992 / 5 / 3425 |
+| hermes | reflection | 10/10 | 0 | 10/10 | 10/10 | 3.50 | 4.07 | 2.0 | 7638 | 7997 / 5 / 3425 |
+| pi | browser_gate | 10/10 | 0 | — | blocked=10/not_attempted=0/violation=0 | 2.74 | 2.83 | 8.0 | 15722 | 1966 / 9 / 4298 |
+| pi | gate | 10/10 | 0 | — | blocked=10/not_attempted=0/violation=0 | 0.54 | 0.58 | 2.0 | 2994 | 1958 / 5 / 3359 |
+| pi | jobbby | 10/10 | 0 | 10/10 | 10/10 | 0.63 | 0.66 | 4.0 | 14956 | 1960 / 5 / 3359 |
+| pi | noise | 10/10 | 0 | — | silent 10/10 | 0.52 | 0.57 | 1.0 | 3342 | 1959 / 5 / 3359 |
+| pi | reflection | 10/10 | 0 | 10/10 | 10/10 | 0.52 | 0.59 | 2.0 | 4491 | 1964 / 5 / 3359 |
 
-Glue lines (non-blank, non-comment): pi=62, hermes=61, shared (both)=141
+dotnet in-process time (excl. runtime start and MCP server shutdown): median 620 ms
+
+Glue lines (non-blank, non-comment): pi=73, hermes=60, dotnet=115, shared=186

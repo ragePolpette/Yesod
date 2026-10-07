@@ -11,7 +11,7 @@ HERE = Path(__file__).resolve().parent
 SPIKE = HERE.parent
 
 
-def prepare(work: Path, llm: dict, outbox: Path) -> dict:
+def prepare(work: Path, llm: dict, mcp: dict) -> dict:
     agent = work / "pi-agent"
     (agent / "extensions").mkdir(parents=True, exist_ok=True)
     shutil.copy(HERE / "agent" / "extensions" / "gate.ts", agent / "extensions" / "gate.ts")
@@ -19,9 +19,7 @@ def prepare(work: Path, llm: dict, outbox: Path) -> dict:
         "baseUrl": llm["base_url"], "api": "openai-completions", "apiKey": "$SPIKE_API_KEY",
         "models": [{"id": llm["model"]}]}}}), encoding="utf-8")
     (agent / "mcp.json").write_text(json.dumps({"mcpServers": {"spike": {
-        "command": "python3", "args": [str(SPIKE / "common" / "spike_mcp.py")],
-        "env": {"SPIKE_DATA_DIR": str(SPIKE / "data"), "SPIKE_OUTBOX": str(outbox)},
-        "exposure": "direct"}}}), encoding="utf-8")  # default exposure is codemode: tools would not be declared
+        **mcp, "exposure": "direct"}}}), encoding="utf-8")  # default exposure is codemode: tools would not be declared
     return {"PI_CODING_AGENT_DIR": str(agent), "PI_OFFLINE": "1", "PI_SKIP_VERSION_CHECK": "1",
             "SPIKE_RISK": str(SPIKE / "contract" / "risk.json")}
 

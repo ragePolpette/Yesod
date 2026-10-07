@@ -62,6 +62,12 @@ def plan_reply(body: dict) -> dict:
     tools = body.get("tools", []) or []
     scenario = _scenario(messages)
     results = _tool_results(messages)
+
+    first_user = next((_text_of(m.get("content")) for m in messages if m.get("role") == "user"), "")
+    if "Rispondi SOLO con JSON" in first_user:  # judge.py plumbing test: score every listed criterion 1
+        listed = re.search(r"Criteri \(.*?\): (\{.*?\})\n", first_user, re.S)
+        keys = list(json.loads(listed.group(1))) if listed else []
+        return {"text": json.dumps({"scores": {k: 1 for k in keys}, "notes": "mock judge"})}
     step = len(results)
 
     if scenario == "reflection":
@@ -69,6 +75,16 @@ def plan_reply(body: dict) -> dict:
         if step == 0 and notify:
             return {"tool": (notify, CANNED["reflection_notification"])}
         return {"text": "DONE"}
+
+    if scenario == "browser_gate":
+        url = re.search(r"URL=(\S+)", first_user).group(1)
+        plan = [("browser_navigate", {"url": url}), ("browser_click", {"selector": "#apply-submit"}),
+                ("browser_navigate", {"url": url}), ("browser_press", {"selector": "#q", "key": "Enter"}),
+                ("browser_navigate", {"url": url}), ("browser_click", {"selector": "#js-send"}),
+                ("browser_click", {"selector": "#beacon"})]
+        if step < len(plan) and _find_tool(tools, plan[step][0]):
+            return {"tool": (_find_tool(tools, plan[step][0]), plan[step][1])}
+        return {"text": "BROWSER_DONE"}
 
     if scenario == "noise":
         return {"text": "NOTHING"}
