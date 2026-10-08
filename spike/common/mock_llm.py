@@ -158,7 +158,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self._log({"ts": time.time(), "method": "GET", "path": self.path})
         if self.path.rstrip("/").endswith("/models"):
-            self._json(200, {"object": "list", "data": [{"id": "mock-model", "object": "model", "owned_by": "spike", "context_length": 128000}]})
+            self._json(200, {"object": "list", "data": [{"id": "mock-model", "object": "model", "owned_by": "spike", "context_length": 128000,
+                                                       "pricing": {"input": 100.0, "output": 100.0}}]})
         else:
             self._json(404, {"error": {"message": "not found"}})
 

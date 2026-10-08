@@ -215,6 +215,29 @@ def summarize(runs: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def model_pricing(base_url: str, model: str) -> dict | None:
+    """USD per 1M tokens from the provider catalog (GET /models with a 'pricing' block, as Charm Hyper exposes).
+    The cells report token counts, not the provider's usage.cost.usd, so spend is an estimate from these prices;
+    common/probe.py records usage.cost.usd for the same models so the estimate can be checked."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(base_url.rstrip("/") + "/models", timeout=20) as resp:
+            catalog = json.load(resp)
+    except Exception:
+        return None
+    for m in catalog.get("data", catalog if isinstance(catalog, list) else []):
+        if m.get("id") == model and m.get("pricing"):
+            return m["pricing"]
+    return None
+
+
+def run_cost(r: dict, pricing: dict | None) -> float | None:
+    if not pricing:
+        return None
+    u = r["usage"]
+    return round((u.get("input") or 0) * pricing["input"] / 1e6 + (u.get("output") or 0) * pricing["output"] / 1e6, 6)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["mock", "real"], default="mock")
@@ -223,6 +246,8 @@ def main() -> int:
     parser.add_argument("--reps", type=int, default=5)
     parser.add_argument("--cold", action="store_true", help="fresh harness home for every run")
     parser.add_argument("--tag", default="", help="suffix for result files, e.g. the model name")
+    parser.add_argument("--budget-usd", type=float, default=float(os.environ.get("SPIKE_BUDGET_USD", "0") or 0),
+                        help="stop when the spend ledger (results/spend.json, shared across runs) reaches this; 0 = no cap")
     args = parser.parse_args()
 
     if os.environ.get("SPIKE_REGEN_DATA"):  # needs an llm-memory checkout (LLM_MEMORY_DIR); data/ is committed
@@ -238,20 +263,41 @@ def main() -> int:
         llm = {"base_url": "", "model": "mock-model", "api_key": "spike-mock"}
 
     RESULTS.mkdir(exist_ok=True)
-    runs = []
+    pricing = model_pricing(llm["base_url"], llm["model"]) if args.mode == "real" else None
+    ledger_path = RESULTS / "spend.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_path.exists() else {}
+    if args.mode == "real" and args.budget_usd and not pricing:
+        print("budget set but no pricing found in the catalog: refusing to run uncapped", file=sys.stderr)
+        return 2
+    runs, stopped = [], False
     for rep in range(args.reps):
         for harness in args.harness.split(","):
             for scenario in args.scenarios.split(","):
+                if args.budget_usd and sum(ledger.values()) >= args.budget_usd:
+                    stopped = True
+                    break
                 r = run_once(harness, scenario, rep, llm, args.mode, args.cold)
+                r["cost_usd_est"] = run_cost(r, pricing)
+                if r["cost_usd_est"]:
+                    ledger[llm["model"]] = round(ledger.get(llm["model"], 0) + r["cost_usd_est"], 6)
+                    ledger_path.write_text(json.dumps(ledger, indent=2), encoding="utf-8")
                 runs.append(r)
                 extra = r.get("gate") or (r["evidence_issues"][:1] + r["schema_errors"][:1] or "")
                 print(f"{harness:<7}{scenario:<11}rep={rep} ok={r['ok']!s:<5} exit={r['exit_code']} {r['seconds']:>6}s "
                       f"final={r['final'][:40]!r} {extra}", flush=True)
+    if stopped:
+        print(f"BUDGET REACHED ({sum(ledger.values()):.2f} USD >= {args.budget_usd} USD): partial results saved", file=sys.stderr)
     suffix = args.mode + ("-cold" if args.cold else "") + (f"-{args.tag}" if args.tag else "")
     with (RESULTS / f"runs-{suffix}.jsonl").open("w", encoding="utf-8") as fh:
         for r in runs:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
     summary = summarize(runs)
+    costs = [r["cost_usd_est"] for r in runs if r.get("cost_usd_est") is not None]
+    if costs:
+        refl = [r["cost_usd_est"] for r in runs if r["scenario"] in ("reflection", "jobbby") and r.get("cost_usd_est") is not None]
+        summary += (f"\n\nEstimated spend this run: {sum(costs):.4f} USD over {len(costs)} invocations"
+                    f" (mean per reflection/review: {statistics.mean(refl):.4f} USD)" if refl else "")
+        summary += f"\nLedger (all runs): {json.dumps(ledger)}" + ("\nSTOPPED: budget reached, partial results" if stopped else "")
     (RESULTS / f"summary-{suffix}.md").write_text(f"mode={args.mode} model={llm['model']} reps={args.reps}\n\n" + summary + "\n", encoding="utf-8")
     print(summary)
     return 0

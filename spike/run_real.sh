@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Real-model run of the spike: same model, same endpoint, three cells (pi, hermes, dotnet).
+# Real-model run of the spike: same model, same endpoint, for every cell in SPIKE_HARNESSES (default dotnet,pi).
+# Run common/probe.py on the candidate models first: it checks tool calling (stream and non-stream) and usage.cost.usd.
 #
 #   export SPIKE_BASE_URL=https://openrouter.ai/api/v1   # any OpenAI-compatible endpoint
 #   export SPIKE_API_KEY=...
@@ -11,6 +12,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 REPS="${1:-5}"
+HARNESSES="${SPIKE_HARNESSES:-dotnet,pi}"         # hermes is out of the decision; add it explicitly if wanted
+export SPIKE_BUDGET_USD="${SPIKE_BUDGET_USD:-5}"   # shared ledger in results/spend.json, estimated from catalog prices
 SCENARIOS="reflection,noise,jobbby,gate,browser_gate"
 : "${SPIKE_BASE_URL:?}" "${SPIKE_API_KEY:?}" "${SPIKE_MODELS:?space-separated model ids}"
 export SPIKE_MCP_PYTHON="${SPIKE_MCP_PYTHON:-python3}"   # must have playwright installed for browser_gate
@@ -19,7 +22,7 @@ dotnet build dotnet/SpikeRunner.csproj -c Release -o dotnet/out -nologo -v quiet
 
 for model in $SPIKE_MODELS; do
   tag="$(echo "$model" | tr '/:' '__')"
-  SPIKE_MODEL="$model" python3 run_spike.py --mode real --reps "$REPS" --scenarios "$SCENARIOS" --tag "$tag" \
+  SPIKE_MODEL="$model" python3 run_spike.py --mode real --reps "$REPS" --harness "$HARNESSES" --scenarios "$SCENARIOS" --tag "$tag" \
     | tee "results/console-real-$tag.txt"
   python3 common/judge.py export "results/runs-real-$tag.jsonl"
   if [ -n "${SPIKE_JUDGE_MODEL:-}" ]; then
